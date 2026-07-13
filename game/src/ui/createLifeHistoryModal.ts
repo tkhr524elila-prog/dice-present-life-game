@@ -19,6 +19,8 @@ const TYPE_LABELS: Record<LifeHistoryType, string> = {
   'card-acquired': 'カード獲得',
   'forced-stop': '人生の節目',
   'chapter-start': '章の始まり',
+  'life-choice': '人生の選択',
+  'traffic-accident': '交通事故',
   goal: 'ゴール',
 }
 

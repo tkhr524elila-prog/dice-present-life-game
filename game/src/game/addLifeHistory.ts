@@ -6,6 +6,8 @@ export type LifeHistoryType =
   | 'card-acquired'
   | 'forced-stop'
   | 'chapter-start'
+  | 'life-choice'
+  | 'traffic-accident'
   | 'goal'
 
 export type LifeHistoryEntry = {

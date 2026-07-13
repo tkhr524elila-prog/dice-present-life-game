@@ -958,6 +958,39 @@ button {
   color: #5b5872;
   font-size: 18px;
   line-height: 1.8;
+  white-space: pre-line;
+}
+
+.prototype-event-outcome {
+  width: fit-content;
+  margin: -12px auto 20px;
+  padding: 7px 15px;
+  border: 2px solid #d5ac3f;
+  border-radius: 999px;
+  background: #fff4bd;
+  color: #725511;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.prototype-event-card-notice {
+  margin: 15px 0 0;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: #fff1b8;
+  color: #6d5110;
+  font-weight: 900;
+}
+
+.prototype-event-modifier {
+  width: fit-content;
+  margin: 13px auto 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #dff0ff;
+  color: #376d9c;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .prototype-event-changes {
@@ -1042,6 +1075,295 @@ button {
   background: #918da7;
   box-shadow: 0 3px 0 #6e6a80;
   cursor: wait;
+}
+
+.life-choice-modal,
+.contract-modal {
+  position: absolute;
+  z-index: 13;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgb(18 23 42 / 68%);
+  box-sizing: border-box;
+}
+
+.life-choice-modal[hidden],
+.contract-modal[hidden] {
+  display: none;
+}
+
+.life-choice-panel {
+  width: min(900px, calc(100vw - 56px));
+  max-height: calc(100vh - 56px);
+  padding: 28px 34px 24px;
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 25px;
+  background: linear-gradient(145deg, #fffdf4, #f1efff);
+  box-shadow: 0 28px 90px rgb(12 17 38 / 52%);
+  color: #38365f;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.life-choice-label,
+.contract-label {
+  margin: 0 0 7px;
+  color: #8062b4;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.life-choice-panel h2 {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 34px;
+}
+
+.life-choice-description {
+  margin: 10px 0 20px;
+  color: #625e74;
+  font-size: 16px;
+}
+
+.life-choice-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.life-choice-option {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 21px 22px 20px;
+  border: 2px solid #d9d3e8;
+  border-radius: 19px;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 10px 22px rgb(56 50 88 / 10%);
+  text-align: left;
+}
+
+.life-choice-option h3 {
+  margin: 0;
+  color: #3e3a61;
+  font-size: 23px;
+}
+
+.life-choice-option-description {
+  min-height: 48px;
+  margin: 8px 0 14px;
+  color: #625e70;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.life-choice-option-changes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 13px;
+}
+
+.life-choice-change {
+  padding: 8px 5px;
+  border-radius: 9px;
+  background: #f1eff6;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.life-choice-change--positive {
+  background: #dff5e8;
+  color: #16724a;
+}
+
+.life-choice-change--negative {
+  background: #f8e2e5;
+  color: #ae3548;
+}
+
+.life-choice-change--neutral {
+  color: #777283;
+}
+
+.life-choice-comparisons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.life-choice-comparisons ul {
+  min-height: 68px;
+  margin: 0;
+  padding: 10px 11px 10px 26px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.life-choice-merits {
+  background: #e5f6eb;
+  color: #247249;
+}
+
+.life-choice-demerits {
+  background: #f8e5e8;
+  color: #9a3444;
+}
+
+.life-choice-select,
+.contract-confirm {
+  min-width: 210px;
+  margin: auto auto 0;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6858c7, #a456a4);
+  box-shadow: 0 6px 0 #4f438f;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.life-choice-select:hover,
+.contract-confirm:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.life-choice-select:disabled,
+.contract-confirm:disabled {
+  cursor: wait;
+}
+
+.life-choice-note {
+  margin: 15px 0 0;
+  color: #7b7688;
+  font-size: 12px;
+}
+
+.contract-panel {
+  width: min(580px, calc(100vw - 56px));
+  padding: 27px 32px 31px;
+  border-radius: 24px;
+  background: #eee9dd;
+  box-shadow: 0 28px 90px rgb(12 17 38 / 55%);
+  color: #403a31;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.contract-document {
+  position: relative;
+  min-height: 360px;
+  margin: 10px 0 24px;
+  padding: 27px 32px;
+  overflow: hidden;
+  border: 1px solid #c8b996;
+  background:
+    linear-gradient(rgb(255 255 255 / 65%), rgb(255 255 255 / 65%)),
+    repeating-linear-gradient(0deg, #f4eddc 0 28px, #e9dfc8 29px);
+  box-shadow: 0 11px 24px rgb(79 65 39 / 20%);
+  box-sizing: border-box;
+}
+
+.contract-document h2 {
+  margin: 0;
+  padding-bottom: 11px;
+  border-bottom: 2px solid #524a3c;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 29px;
+  letter-spacing: 0.12em;
+}
+
+.contract-summary {
+  margin: 19px 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.contract-details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  text-align: left;
+}
+
+.contract-details div {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgb(255 255 255 / 58%);
+}
+
+.contract-details dt {
+  font-weight: 900;
+}
+
+.contract-details dd {
+  margin: 0;
+}
+
+.contract-stamp {
+  position: absolute;
+  right: 30px;
+  bottom: 24px;
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  border: 5px double #b11f28;
+  border-radius: 50%;
+  color: #b11f28;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 18px;
+  font-weight: 900;
+  opacity: 0;
+  transform: translateY(-120px) rotate(-18deg) scale(1.6);
+}
+
+.contract-stamp--pressed {
+  opacity: 0.88;
+  transform: translateY(0) rotate(-8deg) scale(1);
+  transition: transform 230ms cubic-bezier(0.2, 1.3, 0.4, 1), opacity 80ms;
+}
+
+.contract-established {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  margin: 0;
+  place-items: center;
+  background: rgb(255 251 223 / 82%);
+  color: #a7780a;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.contract-established--visible {
+  opacity: 1;
+  transition: opacity 250ms ease;
+}
+
+.contract-panel--impact {
+  animation: contract-impact 280ms ease;
+}
+
+@keyframes contract-impact {
+  35% { transform: translate(5px, 2px) rotate(0.4deg); }
+  65% { transform: translate(-4px, -1px) rotate(-0.3deg); }
 }
 
 .title-screen {

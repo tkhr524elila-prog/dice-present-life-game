@@ -1,7 +1,10 @@
 import './style.css'
 import { verifyNormalEventData } from './data/normalEventData'
+import { verifyLifeChoiceData } from './data/lifeChoiceData'
 import { verifyPresentDrawRules } from './game/drawLifeCard'
 import { verifyLifeHistoryRules } from './game/addLifeHistory'
+import { verifyJobModifierRules } from './game/applyJobModifiers'
+import { verifyTrafficAccidentRules } from './game/resolveTrafficAccident'
 import {
   createPrototypeGameFlow,
   type PrototypeGameFlow,
@@ -9,12 +12,15 @@ import {
 import { verifyStatusBoundaryRules } from './game/applyStatusChanges'
 import {
   createGameStateStore,
+  verifyLifeChoiceStateRules,
   verifyLifeCardOwnershipRules,
 } from './game/gameState'
 import { createScene } from './three/createScene'
 import { createChapterBanner } from './ui/createChapterBanner'
 import { createDiceControls } from './ui/createDiceControls'
+import { createContractModal } from './ui/createContractModal'
 import { createLifeCardInventory } from './ui/createLifeCardInventory'
+import { createLifeChoiceModal } from './ui/createLifeChoiceModal'
 import { createLifeHistoryModal } from './ui/createLifeHistoryModal'
 import { createPresentDrawModal } from './ui/createPresentDrawModal'
 import { createPrototypeEventModal } from './ui/createPrototypeEventModal'
@@ -30,13 +36,17 @@ if (import.meta.env.DEV) {
   verifyPresentDrawRules()
   verifyLifeCardOwnershipRules()
   verifyLifeHistoryRules()
+  verifyLifeChoiceData()
+  verifyLifeChoiceStateRules()
+  verifyJobModifierRules()
+  verifyTrafficAccidentRules()
 }
 
 const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">P2-06：人生ノート確認</p>
+    <p class="development-label">Phase 3：人生の選択・契約確認</p>
   `
 
   app.appendChild(sceneContainer)
@@ -48,6 +58,8 @@ const showThreeScene = () => {
   )
   const chapterBanner = createChapterBanner()
   const eventModal = createPrototypeEventModal()
+  const lifeChoiceModal = createLifeChoiceModal()
+  const contractModal = createContractModal()
   const presentDrawModal = createPresentDrawModal()
   const statusPanel = createStatusPanel(gameState)
   let updateInventoryPhase:
@@ -90,6 +102,8 @@ const showThreeScene = () => {
   sceneContainer.appendChild(diceControls.element)
   sceneContainer.appendChild(chapterBanner.element)
   sceneContainer.appendChild(eventModal.element)
+  sceneContainer.appendChild(lifeChoiceModal.element)
+  sceneContainer.appendChild(contractModal.element)
   sceneContainer.appendChild(presentDrawModal.element)
   sceneContainer.appendChild(statusPanel.element)
   sceneContainer.appendChild(lifeCardInventory.element)
@@ -101,6 +115,8 @@ const showThreeScene = () => {
     movePlayerTo: sceneController.movePlayerTo,
     showChapter: chapterBanner.show,
     showEvent: eventModal.show,
+    showLifeChoice: lifeChoiceModal.show,
+    showContract: contractModal.show,
     showPresentDraw: presentDrawModal.show,
     setPhase: setGamePhase,
     setResult: diceControls.setResult,
@@ -113,6 +129,8 @@ const showThreeScene = () => {
     gameFlow?.dispose()
     chapterBanner.dispose()
     eventModal.dispose()
+    lifeChoiceModal.dispose()
+    contractModal.dispose()
     presentDrawModal.dispose()
     statusPanel.dispose()
     lifeCardInventory.dispose()

@@ -5,11 +5,19 @@ import {
 } from '../data/boardData'
 import {
   getNormalEventBySquareId,
-  type NormalEventData,
 } from '../data/normalEventData'
+import {
+  getLifeChoiceBySquareId,
+  type ContractData,
+  type LifeChoiceData,
+  type LifeChoiceOption,
+} from '../data/lifeChoiceData'
 import type { DiceValue } from '../three/createPrototypeDice'
 import type { LifeCardData } from '../data/lifeCardData'
+import type { DisplayEventData } from '../ui/createPrototypeEventModal'
 import { drawLifeCard } from './drawLifeCard'
+import { applyJobModifiers } from './applyJobModifiers'
+import { resolveTrafficAccident } from './resolveTrafficAccident'
 import type { GameStateStore } from './gameState'
 
 export type PrototypeTurnPhase =
@@ -21,6 +29,9 @@ export type PrototypeTurnPhase =
   | 'present'
   | 'inventory'
   | 'history'
+  | 'choice'
+  | 'contract'
+  | 'accident'
   | 'finished'
 
 type PrototypeGameFlowOptions = {
@@ -28,7 +39,9 @@ type PrototypeGameFlowOptions = {
   rollDice: () => Promise<DiceValue>
   movePlayerTo: (squareNumber: number) => Promise<void>
   showChapter: (chapterNumber: number, chapterTitle: string) => Promise<void>
-  showEvent: (event: NormalEventData) => Promise<void>
+  showEvent: (event: DisplayEventData) => Promise<void>
+  showLifeChoice: (choice: LifeChoiceData) => Promise<LifeChoiceOption>
+  showContract: (contract: ContractData) => Promise<void>
   showPresentDraw: (
     card: LifeCardData,
     isGuaranteed: boolean,
@@ -125,7 +138,6 @@ export const createPrototypeGameFlow = (
           }
 
           if (square.type === 'stop') {
-            options.gameState.markForcedStopProcessed(square.id)
             options.gameState.addLifeHistory({
               type: 'forced-stop',
               squareId: square.id,
@@ -162,6 +174,44 @@ export const createPrototypeGameFlow = (
           loveAtOccurrence: null,
           deduplicationKey: `goal:${stoppedSquare.id}`,
         })
+        return
+      }
+
+      if (stoppedSquare?.type === 'stop') {
+        const choice = getLifeChoiceBySquareId(stoppedSquare.id)
+        if (!choice) {
+          throw new Error(`マス${stoppedSquare.id}の人生の選択が見つかりません。`)
+        }
+
+        options.setPhase('choice')
+        const selectedOption = await options.showLifeChoice(choice)
+        if (disposed) return
+
+        if (selectedOption.contract) {
+          options.setPhase('contract')
+          await options.showContract(selectedOption.contract)
+          if (disposed) return
+        }
+
+        const result = options.gameState.completeLifeChoice(
+          stoppedSquare.id,
+          selectedOption,
+        )
+        if (result.didApply) {
+          options.gameState.addLifeHistory({
+            type: 'life-choice',
+            squareId: stoppedSquare.id,
+            chapter: stoppedSquare.chapter,
+            title: selectedOption.historyTitle,
+            description: selectedOption.historyDescription,
+            pointsChange: result.applied.points,
+            healthChange: result.applied.health,
+            loveChange: result.applied.love,
+            cardId: null,
+            loveAtOccurrence: null,
+            deduplicationKey: `life-choice:${stoppedSquare.id}`,
+          })
+        }
         return
       }
 
@@ -204,8 +254,50 @@ export const createPrototypeGameFlow = (
 
       if (stoppedSquare?.type !== 'normal') return
 
-      const event = getNormalEventBySquareId(stoppedSquare.id)
-      if (!event) return
+      if (stoppedSquare.id === 33) {
+        const stateAtAccident = options.gameState.getState()
+        const accident = resolveTrafficAccident(
+          stateAtAccident.isCarInsuranceActive,
+        )
+        options.setPhase('accident')
+        await options.showEvent({
+          ...accident.event,
+          outcomeLabel: accident.outcomeLabel,
+          acquiredCardName: accident.cardId ? '車修理' : undefined,
+        })
+        if (disposed) return
+
+        const appliedChanges = options.gameState.applyStatusChanges({
+          points: accident.event.point,
+          health: accident.event.health,
+          love: accident.event.love,
+        })
+        if (accident.cardId) {
+          options.gameState.acquireLifeCard(accident.cardId, 33, false)
+        }
+        options.gameState.addLifeHistory({
+          type: 'traffic-accident',
+          squareId: 33,
+          chapter: stoppedSquare.chapter,
+          title: accident.historyTitle,
+          description: accident.historyDescription,
+          pointsChange: appliedChanges.points,
+          healthChange: appliedChanges.health,
+          loveChange: appliedChanges.love,
+          cardId: accident.cardId,
+          loveAtOccurrence: accident.cardId ? stateAtAccident.love : null,
+          deduplicationKey: 'traffic-accident:33',
+        })
+        return
+      }
+
+      const stateBeforeEvent = options.gameState.getState()
+      const baseEvent = getNormalEventBySquareId(
+        stoppedSquare.id,
+        stateBeforeEvent.romanceType,
+      )
+      if (!baseEvent) return
+      const event = applyJobModifiers(baseEvent, stateBeforeEvent.jobType)
 
       options.setPhase('event')
       await options.showEvent(event)

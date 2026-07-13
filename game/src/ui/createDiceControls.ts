@@ -50,6 +50,9 @@ export const createDiceControls = (
     present: 'プレゼント抽選中…',
     inventory: 'カード確認中…',
     history: '人生ノート確認中…',
+    choice: '人生の選択中…',
+    contract: '契約手続き中…',
+    accident: '事故確認中…',
     finished: 'ゴール到着',
   }
 
