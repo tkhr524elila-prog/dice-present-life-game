@@ -1,4 +1,5 @@
 import './style.css'
+import { verifyNormalEventData } from './data/normalEventData'
 import {
   createPrototypeGameFlow,
   type PrototypeGameFlow,
@@ -17,13 +18,14 @@ let disposeScene: (() => void) | undefined
 
 if (import.meta.env.DEV) {
   verifyStatusBoundaryRules()
+  verifyNormalEventData()
 }
 
 const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">P2-03：ステータス管理確認</p>
+    <p class="development-label">P2-04：本番イベント確認</p>
   `
 
   app.appendChild(sceneContainer)

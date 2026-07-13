@@ -3,9 +3,12 @@ import {
   getBoardSquare,
   getSquareTypeLabel,
 } from '../data/boardData'
+import {
+  getNormalEventBySquareId,
+  type NormalEventData,
+} from '../data/normalEventData'
 import type { DiceValue } from '../three/createPrototypeDice'
 import type { GameStateStore } from './gameState'
-import { UNIVERSITY_ENTRANCE_EVENT } from './prototypeEvent'
 
 export type PrototypeTurnPhase =
   | 'ready'
@@ -20,7 +23,7 @@ type PrototypeGameFlowOptions = {
   rollDice: () => Promise<DiceValue>
   movePlayerTo: (squareNumber: number) => Promise<void>
   showChapter: (chapterNumber: number, chapterTitle: string) => Promise<void>
-  showEvent: () => Promise<void>
+  showEvent: (event: NormalEventData) => Promise<void>
   setPhase: (phase: PrototypeTurnPhase) => void
   setResult: (value: DiceValue) => void
   setCurrentSquare: (squareNumber: number) => void
@@ -104,15 +107,29 @@ export const createPrototypeGameFlow = (
         }
       }
 
+      const stoppedSquare = getBoardSquare(
+        options.gameState.getState().currentSquare,
+      )
+
+      if (stoppedSquare?.type === 'goal') {
+        options.gameState.setAtGoal()
+        return
+      }
+
+      if (stoppedSquare?.type !== 'normal') return
+
+      const event = getNormalEventBySquareId(stoppedSquare.id)
+      if (!event) return
+
       options.setPhase('event')
-      await options.showEvent()
+      await options.showEvent(event)
       if (disposed) return
 
-      options.gameState.applyStatusChanges(UNIVERSITY_ENTRANCE_EVENT.changes)
-
-      if (options.gameState.getState().currentSquare === LAST_SQUARE) {
-        options.gameState.setAtGoal()
-      }
+      options.gameState.applyStatusChanges({
+        points: event.point,
+        health: event.health,
+        love: event.love,
+      })
     } finally {
       isBusy = false
       if (!disposed) {
