@@ -2,8 +2,21 @@ import * as THREE from 'three'
 
 type PrototypePlayer = {
   group: THREE.Group
+  moveTo: (targetPosition: THREE.Vector3) => Promise<void>
+  update: (time: number) => void
   dispose: () => void
 }
+
+type MovementState = {
+  start: THREE.Vector3
+  target: THREE.Vector3
+  startTime?: number
+  resolve: () => void
+}
+
+const MOVE_DURATION = 450
+const smoothStep = (progress: number) =>
+  progress * progress * (3 - 2 * progress)
 
 export const createPrototypePlayer = (
   startPosition: THREE.Vector3,
@@ -42,9 +55,54 @@ export const createPrototypePlayer = (
   directionMarker.castShadow = true
   group.add(directionMarker)
 
+  let movementState: MovementState | undefined
+
+  const moveTo = (targetPosition: THREE.Vector3) => {
+    if (group.position.equals(targetPosition)) {
+      return Promise.resolve()
+    }
+
+    const direction = targetPosition.clone().sub(group.position)
+    group.rotation.y = -Math.atan2(direction.z, direction.x)
+
+    return new Promise<void>((resolve) => {
+      movementState = {
+        start: group.position.clone(),
+        target: targetPosition.clone(),
+        resolve,
+      }
+    })
+  }
+
+  const update = (time: number) => {
+    if (!movementState) return
+
+    movementState.startTime ??= time
+    const progress = Math.min(
+      (time - movementState.startTime) / MOVE_DURATION,
+      1,
+    )
+    group.position.lerpVectors(
+      movementState.start,
+      movementState.target,
+      smoothStep(progress),
+    )
+
+    if (progress === 1) {
+      const completedMovement = movementState
+      group.position.copy(completedMovement.target)
+      movementState = undefined
+      completedMovement.resolve()
+    }
+  }
+
   return {
     group,
+    moveTo,
+    update,
     dispose: () => {
+      movementState?.resolve()
+      movementState = undefined
       bodyGeometry.dispose()
       headGeometry.dispose()
       directionMarkerGeometry.dispose()

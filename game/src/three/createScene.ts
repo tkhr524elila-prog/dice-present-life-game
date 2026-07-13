@@ -5,6 +5,7 @@ import { createPrototypePlayer } from './createPrototypePlayer'
 
 type SceneController = {
   rollDice: () => Promise<DiceValue>
+  movePlayerTo: (squareNumber: number) => Promise<void>
   dispose: () => void
 }
 
@@ -70,11 +71,18 @@ export const createScene = (container: HTMLElement): SceneController => {
 
   renderer.setAnimationLoop((time) => {
     prototypeDice.update(time)
+    prototypePlayer.update(time)
     renderer.render(scene, camera)
   })
 
   return {
     rollDice: prototypeDice.roll,
+    movePlayerTo: (squareNumber) => {
+      const targetPosition = prototypeBoard.squarePositions[squareNumber - 1]
+      return targetPosition
+        ? prototypePlayer.moveTo(targetPosition)
+        : Promise.resolve()
+    },
     dispose: () => {
       window.removeEventListener('resize', resize)
       renderer.setAnimationLoop(null)

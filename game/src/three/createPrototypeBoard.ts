@@ -7,6 +7,7 @@ const SQUARE_HEIGHT = 0.24
 type PrototypeBoard = {
   group: THREE.Group
   startPosition: THREE.Vector3
+  squarePositions: readonly THREE.Vector3[]
   dispose: () => void
 }
 
@@ -108,9 +109,14 @@ export const createPrototypeBoard = (): PrototypeBoard => {
     numberMaterials.push(numberMaterial)
   })
 
+  const squarePositions = positions.map((position) =>
+    position.clone().setY(SQUARE_HEIGHT),
+  )
+
   return {
     group,
-    startPosition: positions[0].clone().setY(SQUARE_HEIGHT),
+    startPosition: squarePositions[0].clone(),
+    squarePositions,
     dispose: () => {
       squareGeometry.dispose()
       connectorGeometry.dispose()
