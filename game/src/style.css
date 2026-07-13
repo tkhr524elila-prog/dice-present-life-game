@@ -130,6 +130,327 @@ button {
   text-shadow: 0 1px 0 #ffffff;
 }
 
+.present-draw-modal,
+.life-card-inventory-modal {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgb(18 23 42 / 62%);
+}
+
+.present-draw-modal[hidden],
+.life-card-inventory-modal[hidden] {
+  display: none;
+}
+
+.present-draw-panel {
+  width: min(520px, calc(100vw - 56px));
+  min-height: 500px;
+  padding: 30px 38px 32px;
+  border: 1px solid rgb(255 255 255 / 78%);
+  border-radius: 26px;
+  background: linear-gradient(155deg, #fffdf3, #f4efff);
+  box-shadow: 0 28px 90px rgb(12 17 38 / 48%);
+  color: #38365f;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.present-draw-heading,
+.life-card-inventory-label {
+  margin: 0 0 8px;
+  color: #8062b4;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.present-draw-panel h2,
+.life-card-inventory-panel h2 {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 34px;
+}
+
+.present-draw-box {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin: 46px auto 24px;
+  animation: present-box-bounce 850ms ease-in-out infinite alternate;
+}
+
+.present-draw-box-body {
+  display: grid;
+  width: 150px;
+  height: 132px;
+  margin: 28px auto 0;
+  place-items: center;
+  border: 4px solid #a8741c;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffe06b, #f4a83e);
+  box-shadow: 0 16px 26px rgb(115 76 18 / 28%);
+  font-size: 74px;
+}
+
+.present-draw-box-lid {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 0;
+  width: 170px;
+  height: 38px;
+  border: 4px solid #a8741c;
+  border-radius: 13px;
+  background: #ffd24f;
+  box-sizing: border-box;
+  animation: present-lid-wiggle 420ms ease-in-out infinite alternate;
+}
+
+.present-draw-wait {
+  margin: 0;
+  color: #6a6680;
+  font-weight: 800;
+}
+
+.present-result-card {
+  display: grid;
+  min-height: 280px;
+  margin: 24px auto 20px;
+  padding: 24px 28px;
+  place-items: center;
+  border: 3px solid;
+  border-radius: 22px;
+  box-shadow: 0 18px 34px rgb(49 44 81 / 22%);
+  animation: present-card-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  box-sizing: border-box;
+}
+
+.present-result-card[hidden] {
+  display: none;
+}
+
+.present-result-card--prize {
+  border-color: #e8b632;
+  background: linear-gradient(145deg, #fff7bc, #dff3ff);
+}
+
+.present-result-card--trouble {
+  border-color: #984e5b;
+  background: linear-gradient(145deg, #f3d8db, #d9d9de);
+}
+
+.present-result-card--special {
+  border-color: #9b6ac7;
+  background: linear-gradient(145deg, #ead8ff, #ffe0bf);
+}
+
+.present-result-icon {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.present-result-type {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.present-result-name {
+  margin: 0;
+  font-size: 30px;
+}
+
+.present-result-description {
+  margin: 4px 0 0;
+  color: #5e5a70;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.present-result-guarantee {
+  margin: 6px 0 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1c644;
+  color: #49380c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.present-result-button,
+.life-card-inventory-close {
+  min-width: 210px;
+  padding: 13px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6858c7, #a456a4);
+  box-shadow: 0 6px 0 #4f438f;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.present-result-button:disabled {
+  background: #aaa6b6;
+  box-shadow: 0 3px 0 #7d798b;
+  cursor: wait;
+}
+
+.life-card-inventory-button {
+  position: absolute;
+  z-index: 4;
+  top: 112px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 18px;
+  border: 1px solid rgb(255 255 255 / 82%);
+  border-radius: 999px;
+  background: rgb(52 48 89 / 88%);
+  box-shadow: 0 9px 24px rgb(38 46 82 / 25%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(9px);
+}
+
+.life-card-inventory-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.life-card-count {
+  display: grid;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1c644;
+  color: #41330e;
+  box-sizing: border-box;
+}
+
+.life-card-inventory-modal {
+  z-index: 11;
+}
+
+.life-card-inventory-panel {
+  width: min(680px, calc(100vw - 56px));
+  max-height: calc(100vh - 70px);
+  padding: 30px 36px 32px;
+  overflow: auto;
+  border: 1px solid rgb(255 255 255 / 78%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 28px 90px rgb(12 17 38 / 48%);
+  color: #38365f;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.life-card-inventory-list {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.life-card-inventory-empty {
+  margin: 28px 0;
+  padding: 24px;
+  border-radius: 14px;
+  background: #f2eff8;
+  color: #747084;
+  text-align: center;
+}
+
+.life-card-inventory-item {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px;
+  padding: 14px 18px;
+  border-left: 6px solid;
+  border-radius: 14px;
+}
+
+.life-card-inventory-item--prize {
+  border-color: #e8b632;
+  background: #fff9d8;
+}
+
+.life-card-inventory-item--trouble {
+  border-color: #984e5b;
+  background: #f5e5e7;
+}
+
+.life-card-inventory-item--special {
+  border-color: #9b6ac7;
+  background: #f2e8fc;
+}
+
+.life-card-inventory-icon {
+  align-self: center;
+  font-size: 38px;
+  text-align: center;
+}
+
+.life-card-inventory-type {
+  margin: 0;
+  color: #766e89;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.life-card-inventory-item h3 {
+  margin: 3px 0 5px;
+  font-size: 18px;
+}
+
+.life-card-inventory-item h3 span {
+  color: #8062b4;
+}
+
+.life-card-inventory-description {
+  margin: 0;
+  color: #666174;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+@keyframes present-box-bounce {
+  to {
+    transform: translateY(-7px) rotate(1deg);
+  }
+}
+
+@keyframes present-lid-wiggle {
+  to {
+    transform: translateY(-5px) rotate(-2deg);
+  }
+}
+
+@keyframes present-card-reveal {
+  from {
+    opacity: 0;
+    transform: rotateY(90deg) scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotateY(0) scale(1);
+  }
+}
+
 @keyframes status-positive-highlight {
   45% {
     background: #c8f3d9;

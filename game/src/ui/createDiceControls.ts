@@ -47,6 +47,8 @@ export const createDiceControls = (
     moving: '移動中…',
     chapter: '章タイトル表示中…',
     event: 'イベント確認中…',
+    present: 'プレゼント抽選中…',
+    inventory: 'カード確認中…',
     finished: 'ゴール到着',
   }
 

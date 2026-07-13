@@ -8,6 +8,8 @@ import {
   type NormalEventData,
 } from '../data/normalEventData'
 import type { DiceValue } from '../three/createPrototypeDice'
+import type { LifeCardData } from '../data/lifeCardData'
+import { drawLifeCard } from './drawLifeCard'
 import type { GameStateStore } from './gameState'
 
 export type PrototypeTurnPhase =
@@ -16,6 +18,8 @@ export type PrototypeTurnPhase =
   | 'moving'
   | 'chapter'
   | 'event'
+  | 'present'
+  | 'inventory'
   | 'finished'
 
 type PrototypeGameFlowOptions = {
@@ -24,6 +28,11 @@ type PrototypeGameFlowOptions = {
   movePlayerTo: (squareNumber: number) => Promise<void>
   showChapter: (chapterNumber: number, chapterTitle: string) => Promise<void>
   showEvent: (event: NormalEventData) => Promise<void>
+  showPresentDraw: (
+    card: LifeCardData,
+    isGuaranteed: boolean,
+    onReveal: () => void,
+  ) => Promise<void>
   setPhase: (phase: PrototypeTurnPhase) => void
   setResult: (value: DiceValue) => void
   setCurrentSquare: (squareNumber: number) => void
@@ -113,6 +122,28 @@ export const createPrototypeGameFlow = (
 
       if (stoppedSquare?.type === 'goal') {
         options.gameState.setAtGoal()
+        return
+      }
+
+      if (stoppedSquare?.type === 'gift') {
+        const stateAtDraw = options.gameState.getState()
+        const drawResult = drawLifeCard({
+          love: stateAtDraw.love,
+          hasGuaranteedSukiyaTicket:
+            stateAtDraw.hasGuaranteedSukiyaTicket,
+        })
+        options.setPhase('present')
+        await options.showPresentDraw(
+          drawResult.card,
+          drawResult.isGuaranteed,
+          () => {
+            options.gameState.acquireLifeCard(
+              drawResult.card.cardId,
+              stoppedSquare.id,
+              drawResult.isGuaranteed,
+            )
+          },
+        )
         return
       }
 
