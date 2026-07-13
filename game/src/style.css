@@ -11,6 +11,10 @@ body {
   overflow: hidden;
 }
 
+button {
+  font: inherit;
+}
+
 #app,
 .scene-container {
   width: 100vw;
@@ -19,6 +23,12 @@ body {
 
 .scene-container {
   position: relative;
+  opacity: 1;
+  transition: opacity 500ms ease;
+}
+
+.scene-container--appearing {
+  opacity: 0;
 }
 
 .scene-container canvas {
@@ -39,4 +49,143 @@ body {
   font-size: 14px;
   line-height: 1.4;
   pointer-events: none;
+}
+
+.title-screen {
+  position: relative;
+  display: grid;
+  width: 100vw;
+  height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 22%, rgb(255 255 255 / 90%) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 18%, rgb(255 244 181 / 90%) 0 3px, transparent 4px),
+    radial-gradient(circle at 86% 74%, rgb(255 255 255 / 75%) 0 2px, transparent 3px),
+    linear-gradient(145deg, #8bd9e8 0%, #b6a9ed 48%, #f7c5d8 100%);
+  opacity: 1;
+  transition: opacity 600ms ease;
+}
+
+.title-screen::before,
+.title-screen::after {
+  position: absolute;
+  width: 38vw;
+  height: 38vw;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 12%);
+  content: '';
+}
+
+.title-screen::before {
+  top: -18vw;
+  left: -10vw;
+}
+
+.title-screen::after {
+  right: -14vw;
+  bottom: -22vw;
+}
+
+.title-screen--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.title-panel {
+  position: relative;
+  z-index: 1;
+  width: min(920px, calc(100vw - 80px));
+  padding: 56px 56px 48px;
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 28px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow:
+    0 24px 70px rgb(69 53 116 / 24%),
+    inset 0 1px 0 rgb(255 255 255 / 90%);
+  color: #403467;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+.game-title {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(34px, 4vw, 50px);
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  text-wrap: balance;
+  text-shadow: 0 3px 0 rgb(255 255 255 / 85%);
+}
+
+.game-description {
+  margin: 28px 0 36px;
+  color: #62567d;
+  font-size: clamp(17px, 1.8vw, 21px);
+  line-height: 1.9;
+  letter-spacing: 0.05em;
+}
+
+.start-button {
+  min-width: 260px;
+  padding: 17px 32px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7665c5, #a75ca8);
+  box-shadow:
+    0 9px 0 #574590,
+    0 16px 28px rgb(79 58 132 / 30%);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    filter 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.start-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-3px);
+  box-shadow:
+    0 12px 0 #574590,
+    0 20px 32px rgb(79 58 132 / 34%);
+}
+
+.start-button:active {
+  transform: translateY(5px);
+  box-shadow:
+    0 4px 0 #574590,
+    0 9px 18px rgb(79 58 132 / 24%);
+}
+
+.start-button:focus-visible {
+  outline: 4px solid #ffffff;
+  outline-offset: 5px;
+}
+
+.start-button:disabled {
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .title-panel {
+    width: min(680px, calc(100vw - 48px));
+    padding: 36px 32px 32px;
+  }
+
+  .game-description {
+    margin: 20px 0 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-container,
+  .title-screen,
+  .start-button {
+    transition-duration: 0ms;
+  }
 }

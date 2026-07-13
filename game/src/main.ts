@@ -1,15 +1,32 @@
 import './style.css'
 import { createScene } from './three/createScene'
+import { createTitleScreen } from './ui/createTitleScreen'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <main class="scene-container">
+const app = document.querySelector<HTMLDivElement>('#app')!
+let disposeScene: (() => void) | undefined
+
+const showThreeScene = () => {
+  const sceneContainer = document.createElement('main')
+  sceneContainer.className = 'scene-container scene-container--appearing'
+  sceneContainer.innerHTML = `
     <p class="development-label">P1-02：Three.js表示確認</p>
-  </main>
-`
+  `
 
-const sceneContainer = document.querySelector<HTMLElement>('.scene-container')!
-const disposeScene = createScene(sceneContainer)
+  app.appendChild(sceneContainer)
+  disposeScene = createScene(sceneContainer)
+
+  requestAnimationFrame(() => {
+    sceneContainer.classList.remove('scene-container--appearing')
+  })
+}
+
+const titleScreen = createTitleScreen(showThreeScene)
+app.appendChild(titleScreen.element)
 
 if (import.meta.hot) {
-  import.meta.hot.dispose(disposeScene)
+  import.meta.hot.dispose(() => {
+    titleScreen.dispose()
+    disposeScene?.()
+    app.replaceChildren()
+  })
 }
