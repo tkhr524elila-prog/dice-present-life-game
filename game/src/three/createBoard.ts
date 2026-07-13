@@ -1,11 +1,15 @@
 import * as THREE from 'three'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { BOARD_SQUARES, type BoardSquareData } from '../data/boardData'
 
-const FRAME_SIZE = 1.55
-const CENTER_SIZE = 1.2
-const SQUARE_HEIGHT = 0.24
+const FRAME_SIZE = 1.68
+const CENTER_SIZE = 1.46
+const FRAME_HEIGHT = 0.3
+const CENTER_HEIGHT = 0.2
+const CENTER_RAISE = 0.2
 const UP_AXIS = new THREE.Vector3(0, 1, 0)
-const PLAYER_REAR_OFFSET = 0.58
+const PLAYER_SIDE_OFFSET = -0.42
+const PLAYER_REAR_OFFSET = 0.38
 
 type AnimatedSquare = {
   square: BoardSquareData
@@ -48,35 +52,39 @@ const drawWarning = (context: CanvasRenderingContext2D) => {
   context.lineWidth = 18
   context.lineJoin = 'round'
   context.beginPath()
-  context.moveTo(256, 74)
-  context.lineTo(352, 238)
-  context.lineTo(160, 238)
+  context.moveTo(256, 164)
+  context.lineTo(356, 338)
+  context.lineTo(156, 338)
   context.closePath()
   context.fill()
   context.stroke()
   context.fillStyle = '#6e1728'
   context.font = '900 120px sans-serif'
-  context.fillText('!', 256, 184)
+  context.fillText('!', 256, 278)
 }
 
 const drawGift = (context: CanvasRenderingContext2D) => {
   context.fillStyle = '#7a4b13'
-  context.fillRect(176, 112, 160, 118)
+  context.fillRect(176, 192, 160, 118)
   context.fillStyle = '#fff1a6'
-  context.fillRect(244, 112, 24, 118)
-  context.fillRect(160, 88, 192, 38)
+  context.fillRect(244, 192, 24, 118)
+  context.fillRect(160, 168, 192, 38)
   context.strokeStyle = '#7a4b13'
   context.lineWidth = 18
   context.beginPath()
-  context.arc(225, 79, 38, Math.PI * 0.05, Math.PI * 1.42)
+  context.arc(225, 159, 38, Math.PI * 0.05, Math.PI * 1.42)
   context.stroke()
   context.beginPath()
-  context.arc(287, 79, 38, Math.PI * 1.58, Math.PI * 0.95)
+  context.arc(287, 159, 38, Math.PI * 1.58, Math.PI * 0.95)
   context.stroke()
 }
 
 const getTextColor = (square: BoardSquareData) =>
-  square.type === 'gift' || square.type === 'goal' ? '#4f3e18' : '#ffffff'
+  square.type === 'gift' ||
+  square.type === 'goal' ||
+  square.effectTone === 'neutral'
+    ? '#3e3d4a'
+    : '#ffffff'
 
 const drawOutlinedText = (
   context: CanvasRenderingContext2D,
@@ -101,53 +109,59 @@ const createSquareFaceTexture = (square: BoardSquareData) => {
   const context = canvas.getContext('2d')!
   const textColor = getTextColor(square)
 
-  context.fillStyle = square.squareColor
+  const surfaceGradient = context.createLinearGradient(0, 0, 0, 512)
+  surfaceGradient.addColorStop(0, '#ffffff')
+  surfaceGradient.addColorStop(0.07, square.squareColor)
+  surfaceGradient.addColorStop(1, square.squareColor)
+  context.fillStyle = surfaceGradient
   context.fillRect(0, 0, canvas.width, canvas.height)
-  context.strokeStyle = 'rgba(255, 255, 255, 0.28)'
-  context.lineWidth = 20
-  context.strokeRect(18, 18, 476, 476)
+  context.strokeStyle = 'rgba(255, 255, 255, 0.42)'
+  context.lineWidth = 18
+  context.strokeRect(22, 22, 468, 468)
+  context.fillStyle = 'rgba(255, 255, 255, 0.1)'
+  context.beginPath()
+  context.arc(256, 272, 170, 0, Math.PI * 2)
+  context.fill()
   context.textAlign = 'center'
   context.textBaseline = 'middle'
 
   if (square.type === 'gift') {
-    context.save()
-    context.translate(150, 214)
-    context.scale(0.66, 0.66)
-    context.translate(-256, -159)
     drawGift(context)
-    context.restore()
-    drawOutlinedText(context, '抽選', 150, 300, '900 54px sans-serif', '#4f3e18')
+    drawOutlinedText(context, '抽選', 256, 382, '900 58px sans-serif', '#4f3e18')
   } else if (square.type === 'stop') {
-    drawOutlinedText(context, 'STOP', 158, 224, '900 72px sans-serif', '#fff5ec')
+    drawOutlinedText(context, 'STOP', 256, 280, '900 92px sans-serif', '#fff5ec')
   } else if (square.type === 'goal') {
-    drawOutlinedText(context, 'GOAL', 158, 224, '900 70px sans-serif', '#fff8d1')
+    drawOutlinedText(context, 'GOAL', 256, 280, '900 86px sans-serif', '#fff8d1')
+    context.fillStyle = '#fff8d1'
+    drawStar(context, 400, 160, 24)
+    drawStar(context, 402, 390, 17)
   } else if (square.effectTone === 'positive') {
     context.fillStyle = '#fff2a1'
     context.strokeStyle = '#287796'
     context.lineWidth = 14
-    drawStar(context, 150, 220, 62)
+    drawStar(context, 256, 280, 104)
     context.stroke()
   } else if (square.effectTone === 'negative') {
-    context.save()
-    context.translate(-106, 58)
     drawWarning(context)
-    context.restore()
   } else if (square.effectTone === 'mixed') {
-    drawOutlinedText(context, '↕', 150, 220, '900 132px sans-serif', '#f3e9ff')
+    drawOutlinedText(context, '↕', 256, 282, '900 168px sans-serif', '#f3e9ff')
   }
 
-  const hasMarker = square.type !== 'normal' || square.effectTone !== 'neutral'
+  context.textAlign = 'left'
+  context.textBaseline = 'top'
   drawOutlinedText(
     context,
     String(square.id),
-    256,
-    hasMarker ? 78 : 150,
-    `900 ${square.id < 10 ? 150 : 130}px sans-serif`,
+    46,
+    42,
+    `900 ${square.id < 10 ? 68 : 62}px sans-serif`,
     textColor,
   )
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
+  texture.center.set(0.5, 0.5)
+  texture.rotation = Math.PI
   return texture
 }
 
@@ -161,15 +175,19 @@ export const createBoard = (): Board => {
   const group = new THREE.Group()
   group.name = 'Board-60Squares'
 
-  const frameGeometry = new THREE.BoxGeometry(
+  const frameGeometry = new RoundedBoxGeometry(
     FRAME_SIZE,
-    SQUARE_HEIGHT,
+    FRAME_HEIGHT,
     FRAME_SIZE,
+    3,
+    0.13,
   )
-  const centerGeometry = new THREE.BoxGeometry(
+  const centerGeometry = new RoundedBoxGeometry(
     CENTER_SIZE,
-    SQUARE_HEIGHT * 1.08,
+    CENTER_HEIGHT,
     CENTER_SIZE,
+    3,
+    0.085,
   )
   const connectorGeometry = new THREE.CylinderGeometry(0.12, 0.12, 1, 10)
   const auraGeometry = new THREE.RingGeometry(0.72, 0.98, 32)
@@ -190,8 +208,8 @@ export const createBoard = (): Board => {
 
     const material = new THREE.MeshStandardMaterial({
       color,
-      roughness: 0.72,
-      metalness: 0.04,
+      roughness: 0.58,
+      metalness: 0.06,
     })
     cache.set(color, material)
     return material
@@ -250,7 +268,7 @@ export const createBoard = (): Board => {
     ])
     center.name = `SquareCenter-${square.id}-${square.type}`
     center.position.copy(position)
-    center.position.y += SQUARE_HEIGHT * 0.57
+    center.position.y += CENTER_RAISE
     if (square.type === 'goal') center.scale.set(1.06, 1, 1.06)
     center.castShadow = true
     center.receiveShadow = true
@@ -269,7 +287,7 @@ export const createBoard = (): Board => {
       const aura = new THREE.Mesh(auraGeometry, auraMaterial)
       aura.name = `SquareAura-${square.id}`
       aura.position.copy(position)
-      aura.position.y += SQUARE_HEIGHT * 0.62
+      aura.position.y += CENTER_RAISE + CENTER_HEIGHT * 0.52
       aura.rotation.x = -Math.PI / 2
       group.add(aura)
       auraMaterials.push(auraMaterial)
@@ -289,7 +307,13 @@ export const createBoard = (): Board => {
   const squarePositions = rawPositions.map((position) =>
     position
       .clone()
-      .add(new THREE.Vector3(0, SQUARE_HEIGHT * 1.12, PLAYER_REAR_OFFSET)),
+      .add(
+        new THREE.Vector3(
+          PLAYER_SIDE_OFFSET,
+          CENTER_RAISE + CENTER_HEIGHT * 0.52,
+          PLAYER_REAR_OFFSET,
+        ),
+      ),
   )
 
   const update = (time: number) => {

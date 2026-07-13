@@ -251,13 +251,13 @@ const NORMAL_COLORS: Record<EffectTone, string> = {
   positive: '#48bfe3',
   negative: '#a85064',
   mixed: '#806caf',
-  neutral: '#8b949e',
+  neutral: '#f1f3f4',
 }
 
 const SPECIAL_COLORS: Record<Exclude<SquareType, 'normal'>, string> = {
   gift: '#f1c644',
   stop: '#eb873d',
-  goal: '#fff0ad',
+  goal: '#fffdf0',
 }
 
 const findChapter = (squareId: number) => {
