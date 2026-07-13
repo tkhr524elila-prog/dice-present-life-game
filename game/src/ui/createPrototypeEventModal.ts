@@ -14,9 +14,9 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
   element.innerHTML = `
     <section class="prototype-event-card">
       <p class="prototype-event-label">仮イベント</p>
-      <h2 id="prototype-event-title">大学入学</h2>
-      <p class="prototype-event-text">自由を手に入れた。時間割はまだ他人が決める。</p>
-      <dl class="prototype-event-changes" aria-label="変動内容（表示確認のみ）">
+      <h2 id="prototype-event-title">${UNIVERSITY_ENTRANCE_EVENT.title}</h2>
+      <p class="prototype-event-text">${UNIVERSITY_ENTRANCE_EVENT.text}</p>
+      <dl class="prototype-event-changes" aria-label="変動内容">
         <div class="prototype-event-change prototype-event-change--positive">
           <dt>ポイント</dt>
           <dd>＋100</dd>
@@ -30,7 +30,7 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
           <dd>＋5</dd>
         </div>
       </dl>
-      <p class="prototype-event-note">※今回は表示確認のみで、実際の数値は変わりません。</p>
+      <p class="prototype-event-note">「次へ」を押すとステータスへ反映されます。</p>
       <button class="prototype-event-next" type="button">次へ</button>
     </section>
   `
@@ -42,8 +42,11 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
   let resolvePending: (() => void) | undefined
 
   const close = () => {
+    if (!resolvePending) return
+
+    nextButton.disabled = true
     element.hidden = true
-    resolvePending?.()
+    resolvePending()
     resolvePending = undefined
     pendingPromise = undefined
   }
@@ -52,6 +55,7 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
     if (pendingPromise) return pendingPromise
 
     element.hidden = false
+    nextButton.disabled = false
     nextButton.focus()
     pendingPromise = new Promise<void>((resolve) => {
       resolvePending = resolve
@@ -71,3 +75,4 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
     },
   }
 }
+import { UNIVERSITY_ENTRANCE_EVENT } from '../game/prototypeEvent'

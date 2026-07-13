@@ -4,6 +4,8 @@ import {
   getSquareTypeLabel,
 } from '../data/boardData'
 import type { DiceValue } from '../three/createPrototypeDice'
+import type { GameStateStore } from './gameState'
+import { UNIVERSITY_ENTRANCE_EVENT } from './prototypeEvent'
 
 export type PrototypeTurnPhase =
   | 'ready'
@@ -14,6 +16,7 @@ export type PrototypeTurnPhase =
   | 'finished'
 
 type PrototypeGameFlowOptions = {
+  gameState: GameStateStore
   rollDice: () => Promise<DiceValue>
   movePlayerTo: (squareNumber: number) => Promise<void>
   showChapter: (chapterNumber: number, chapterTitle: string) => Promise<void>
@@ -35,13 +38,11 @@ const LAST_SQUARE = 60
 export const createPrototypeGameFlow = (
   options: PrototypeGameFlowOptions,
 ): PrototypeGameFlow => {
-  let currentSquare = 1
   let isBusy = false
   let disposed = false
   const shownChapters = new Set<number>([1])
-  const completedForcedStops = new Set<number>()
 
-  options.setCurrentSquare(currentSquare)
+  options.setCurrentSquare(options.gameState.getState().currentSquare)
   options.setCurrentSquareType('通常イベント')
   options.setCurrentChapter(1, '青春の草原')
   options.setPhase('ready')
@@ -59,31 +60,32 @@ export const createPrototypeGameFlow = (
       options.setResult(diceValue)
       options.setPhase('moving')
 
+      const stateBeforeMovement = options.gameState.getState()
       const directDestination = Math.min(
-        currentSquare + diceValue,
+        stateBeforeMovement.currentSquare + diceValue,
         LAST_SQUARE,
       )
       const forcedStop = BOARD_SQUARES.find(
         (square) =>
-          square.id > currentSquare &&
+          square.id > stateBeforeMovement.currentSquare &&
           square.id <= directDestination &&
           square.type === 'stop' &&
-          !completedForcedStops.has(square.id),
+          !stateBeforeMovement.processedForcedStops.has(square.id),
       )
       const destination = forcedStop?.id ?? directDestination
 
       for (
-        let nextSquare = currentSquare + 1;
+        let nextSquare = stateBeforeMovement.currentSquare + 1;
         nextSquare <= destination;
         nextSquare += 1
       ) {
         await options.movePlayerTo(nextSquare)
         if (disposed) return
 
-        currentSquare = nextSquare
-        options.setCurrentSquare(currentSquare)
+        options.gameState.setCurrentSquare(nextSquare)
+        options.setCurrentSquare(nextSquare)
 
-        const square = getBoardSquare(currentSquare)
+        const square = getBoardSquare(nextSquare)
         if (square) {
           options.setCurrentSquareType(getSquareTypeLabel(square.type))
           options.setCurrentChapter(square.chapter, square.chapterTitle)
@@ -97,17 +99,26 @@ export const createPrototypeGameFlow = (
           }
 
           if (square.type === 'stop') {
-            completedForcedStops.add(square.id)
+            options.gameState.markForcedStopProcessed(square.id)
           }
         }
       }
 
       options.setPhase('event')
       await options.showEvent()
+      if (disposed) return
+
+      options.gameState.applyStatusChanges(UNIVERSITY_ENTRANCE_EVENT.changes)
+
+      if (options.gameState.getState().currentSquare === LAST_SQUARE) {
+        options.gameState.setAtGoal()
+      }
     } finally {
       isBusy = false
       if (!disposed) {
-        options.setPhase(currentSquare === LAST_SQUARE ? 'finished' : 'ready')
+        options.setPhase(
+          options.gameState.getState().isAtGoal ? 'finished' : 'ready',
+        )
       }
     }
   }

@@ -51,6 +51,122 @@ button {
   pointer-events: none;
 }
 
+.status-panel {
+  position: absolute;
+  z-index: 3;
+  top: 20px;
+  right: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(112px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 12px 32px rgb(38 46 82 / 22%);
+  color: #38365f;
+  backdrop-filter: blur(10px);
+}
+
+.status-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "icon label"
+    "icon value";
+  column-gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgb(241 238 249 / 82%);
+}
+
+.status-icon {
+  grid-area: icon;
+  align-self: center;
+  font-size: 22px;
+}
+
+.status-label {
+  grid-area: label;
+  color: #6d6982;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status-value {
+  grid-area: value;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.status-item--positive {
+  animation: status-positive-highlight 700ms ease;
+}
+
+.status-item--negative {
+  animation: status-negative-highlight 500ms ease;
+}
+
+.status-change {
+  position: absolute;
+  z-index: 1;
+  right: 8px;
+  top: 2px;
+  font-size: 17px;
+  font-weight: 900;
+  pointer-events: none;
+  animation: status-change-float 1.1s ease-out forwards;
+}
+
+.status-change--positive {
+  color: #168456;
+  text-shadow: 0 1px 0 #ffffff;
+}
+
+.status-change--negative {
+  color: #c13f52;
+  text-shadow: 0 1px 0 #ffffff;
+}
+
+@keyframes status-positive-highlight {
+  45% {
+    background: #c8f3d9;
+    box-shadow: 0 0 0 3px rgb(67 190 119 / 25%);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes status-negative-highlight {
+  25%,
+  65% {
+    background: #ffd9df;
+    transform: translateX(-3px);
+  }
+
+  45% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes status-change-float {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.85);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(1.08);
+  }
+}
+
 .dice-controls {
   position: absolute;
   z-index: 2;
@@ -371,6 +487,12 @@ button {
 .prototype-event-next:focus-visible {
   outline: 4px solid #ffffff;
   outline-offset: 4px;
+}
+
+.prototype-event-next:disabled {
+  background: #918da7;
+  box-shadow: 0 3px 0 #6e6a80;
+  cursor: wait;
 }
 
 .title-screen {
