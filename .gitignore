@@ -1,0 +1,8 @@
+.DS_Store
+
+game/node_modules/
+game/dist/
+game/*.local
+
+*.log
+npm-debug.log*
