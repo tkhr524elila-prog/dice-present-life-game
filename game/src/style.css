@@ -57,9 +57,9 @@ button {
   right: 24px;
   bottom: 24px;
   display: grid;
-  min-width: 220px;
-  gap: 12px;
-  padding: 18px;
+  width: min(300px, calc(100vw - 48px));
+  gap: 10px;
+  padding: 16px;
   border: 1px solid rgb(255 255 255 / 80%);
   border-radius: 18px;
   background: rgb(255 255 255 / 88%);
@@ -75,6 +75,14 @@ button {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.current-chapter {
+  margin: 0;
+  color: #38365f;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
 }
 
 .dice-result {
@@ -120,6 +128,120 @@ button {
   background: #918da7;
   box-shadow: 0 3px 0 #6e6a80;
   cursor: wait;
+}
+
+.board-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  padding-top: 10px;
+  border-top: 1px solid #d7d3e6;
+  color: #66617b;
+  font-size: 11px;
+  text-align: left;
+}
+
+.board-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color,
+.legend-border {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.legend-color--positive {
+  background: #48bfe3;
+}
+
+.legend-color--negative {
+  background: #a85064;
+}
+
+.legend-color--mixed {
+  background: #806caf;
+}
+
+.legend-color--gift {
+  background: #f1c644;
+}
+
+.legend-color--stop {
+  background: #eb873d;
+}
+
+.legend-border {
+  border: 3px solid #66d177;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.chapter-banner {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.chapter-banner[hidden] {
+  display: none;
+}
+
+.chapter-banner-panel {
+  min-width: min(500px, calc(100vw - 72px));
+  padding: 28px 48px 32px;
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 20px;
+  background: rgb(24 26 51 / 84%);
+  box-shadow: 0 22px 70px rgb(11 15 35 / 35%);
+  text-align: center;
+  backdrop-filter: blur(9px);
+}
+
+.chapter-banner--visible .chapter-banner-panel {
+  animation: chapter-banner-entrance 2s ease both;
+}
+
+.chapter-banner-number {
+  margin: 0 0 8px;
+  color: #f5dda0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.chapter-banner-title {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+@keyframes chapter-banner-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  20%,
+  72% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(1.02);
+  }
 }
 
 .prototype-event-modal {
