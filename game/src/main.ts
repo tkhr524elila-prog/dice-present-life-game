@@ -1,8 +1,15 @@
 import './style.css'
+import { createScene } from './three/createScene'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <main class="setup-check">
-    <p>開発環境の準備が完了しました</p>
-    <h1>「サイコロを振ってプレゼントが決まる、人生ゲーム的なゲーム」</h1>
+  <main class="scene-container">
+    <p class="development-label">P1-02：Three.js表示確認</p>
   </main>
 `
+
+const sceneContainer = document.querySelector<HTMLElement>('.scene-container')!
+const disposeScene = createScene(sceneContainer)
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(disposeScene)
+}
