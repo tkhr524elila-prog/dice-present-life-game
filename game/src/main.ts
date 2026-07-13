@@ -1,6 +1,7 @@
 import './style.css'
 import { verifyNormalEventData } from './data/normalEventData'
 import { verifyPresentDrawRules } from './game/drawLifeCard'
+import { verifyLifeHistoryRules } from './game/addLifeHistory'
 import {
   createPrototypeGameFlow,
   type PrototypeGameFlow,
@@ -14,6 +15,7 @@ import { createScene } from './three/createScene'
 import { createChapterBanner } from './ui/createChapterBanner'
 import { createDiceControls } from './ui/createDiceControls'
 import { createLifeCardInventory } from './ui/createLifeCardInventory'
+import { createLifeHistoryModal } from './ui/createLifeHistoryModal'
 import { createPresentDrawModal } from './ui/createPresentDrawModal'
 import { createPrototypeEventModal } from './ui/createPrototypeEventModal'
 import { createStatusPanel } from './ui/createStatusPanel'
@@ -27,13 +29,14 @@ if (import.meta.env.DEV) {
   verifyNormalEventData()
   verifyPresentDrawRules()
   verifyLifeCardOwnershipRules()
+  verifyLifeHistoryRules()
 }
 
 const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">P2-05：プレゼント抽選・ライフカード確認</p>
+    <p class="development-label">P2-06：人生ノート確認</p>
   `
 
   app.appendChild(sceneContainer)
@@ -50,9 +53,13 @@ const showThreeScene = () => {
   let updateInventoryPhase:
     | ((phase: Parameters<typeof diceControls.setPhase>[0]) => void)
     | undefined
+  let updateHistoryPhase:
+    | ((phase: Parameters<typeof diceControls.setPhase>[0]) => void)
+    | undefined
   const setGamePhase = (phase: Parameters<typeof diceControls.setPhase>[0]) => {
     diceControls.setPhase(phase)
     updateInventoryPhase?.(phase)
+    updateHistoryPhase?.(phase)
   }
   const lifeCardInventory = createLifeCardInventory(
     gameState,
@@ -67,12 +74,26 @@ const showThreeScene = () => {
     },
   )
   updateInventoryPhase = lifeCardInventory.setPhase
+  const lifeHistoryModal = createLifeHistoryModal(
+    gameState,
+    (isOpen) => {
+      setGamePhase(
+        isOpen
+          ? 'history'
+          : gameState.getState().isAtGoal
+            ? 'finished'
+            : 'ready',
+      )
+    },
+  )
+  updateHistoryPhase = lifeHistoryModal.setPhase
   sceneContainer.appendChild(diceControls.element)
   sceneContainer.appendChild(chapterBanner.element)
   sceneContainer.appendChild(eventModal.element)
   sceneContainer.appendChild(presentDrawModal.element)
   sceneContainer.appendChild(statusPanel.element)
   sceneContainer.appendChild(lifeCardInventory.element)
+  sceneContainer.appendChild(lifeHistoryModal.element)
 
   gameFlow = createPrototypeGameFlow({
     gameState,
@@ -95,6 +116,7 @@ const showThreeScene = () => {
     presentDrawModal.dispose()
     statusPanel.dispose()
     lifeCardInventory.dispose()
+    lifeHistoryModal.dispose()
     diceControls.dispose()
     sceneController.dispose()
   }

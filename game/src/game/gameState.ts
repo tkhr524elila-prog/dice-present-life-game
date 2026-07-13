@@ -4,6 +4,11 @@ import {
   type StatusValues,
 } from './applyStatusChanges'
 import type { LifeCardId } from '../data/lifeCardData'
+import {
+  addLifeHistory,
+  type LifeHistoryEntry,
+  type LifeHistoryInput,
+} from './addLifeHistory'
 
 export type OwnedLifeCard = {
   cardId: LifeCardId
@@ -17,6 +22,7 @@ export type GameState = StatusValues & {
   processedForcedStops: ReadonlySet<number>
   hasGuaranteedSukiyaTicket: boolean
   ownedLifeCards: readonly OwnedLifeCard[]
+  lifeHistory: readonly LifeHistoryEntry[]
   isAtGoal: boolean
 }
 
@@ -36,6 +42,9 @@ export type GameStateStore = {
     acquiredAtSquare: number,
     completesSukiyaGuarantee: boolean,
   ) => Readonly<OwnedLifeCard>
+  addLifeHistory: (
+    input: LifeHistoryInput,
+  ) => Readonly<LifeHistoryEntry> | undefined
   applyStatusChanges: (changes: StatusChanges) => Readonly<StatusValues>
 }
 
@@ -47,6 +56,7 @@ const createInitialState = (): GameState => ({
   processedForcedStops: new Set<number>(),
   hasGuaranteedSukiyaTicket: false,
   ownedLifeCards: [],
+  lifeHistory: [],
   isAtGoal: false,
 })
 
@@ -103,6 +113,14 @@ export const createGameStateStore = (): GameStateStore => {
       }
       notify()
       return ownedLifeCard
+    },
+    addLifeHistory: (input) => {
+      const result = addLifeHistory(state.lifeHistory, input)
+      if (!result.addedEntry) return undefined
+
+      state = { ...state, lifeHistory: result.history }
+      notify()
+      return result.addedEntry
     },
     applyStatusChanges: (changes) => {
       const result = applyStatusChanges(state, changes)

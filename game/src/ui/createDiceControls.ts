@@ -49,6 +49,7 @@ export const createDiceControls = (
     event: 'イベント確認中…',
     present: 'プレゼント抽選中…',
     inventory: 'カード確認中…',
+    history: '人生ノート確認中…',
     finished: 'ゴール到着',
   }
 

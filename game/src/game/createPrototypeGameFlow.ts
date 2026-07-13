@@ -20,6 +20,7 @@ export type PrototypeTurnPhase =
   | 'event'
   | 'present'
   | 'inventory'
+  | 'history'
   | 'finished'
 
 type PrototypeGameFlowOptions = {
@@ -104,6 +105,19 @@ export const createPrototypeGameFlow = (
 
           if (!shownChapters.has(square.chapter)) {
             shownChapters.add(square.chapter)
+            options.gameState.addLifeHistory({
+              type: 'chapter-start',
+              squareId: square.id,
+              chapter: square.chapter,
+              title: `第${square.chapter}章「${square.chapterTitle}」`,
+              description: '新しい章へ入った。',
+              pointsChange: 0,
+              healthChange: 0,
+              loveChange: 0,
+              cardId: null,
+              loveAtOccurrence: null,
+              deduplicationKey: `chapter-start:${square.chapter}`,
+            })
             options.setPhase('chapter')
             await options.showChapter(square.chapter, square.chapterTitle)
             if (disposed) return
@@ -112,6 +126,19 @@ export const createPrototypeGameFlow = (
 
           if (square.type === 'stop') {
             options.gameState.markForcedStopProcessed(square.id)
+            options.gameState.addLifeHistory({
+              type: 'forced-stop',
+              squareId: square.id,
+              chapter: square.chapter,
+              title: square.label,
+              description: `マス${square.id} ${square.label}へ到達`,
+              pointsChange: 0,
+              healthChange: 0,
+              loveChange: 0,
+              cardId: null,
+              loveAtOccurrence: null,
+              deduplicationKey: `forced-stop:${square.id}`,
+            })
           }
         }
       }
@@ -122,6 +149,19 @@ export const createPrototypeGameFlow = (
 
       if (stoppedSquare?.type === 'goal') {
         options.gameState.setAtGoal()
+        options.gameState.addLifeHistory({
+          type: 'goal',
+          squareId: stoppedSquare.id,
+          chapter: stoppedSquare.chapter,
+          title: 'ゴール到着',
+          description: '29歳のゴールへ到着した。',
+          pointsChange: 0,
+          healthChange: 0,
+          loveChange: 0,
+          cardId: null,
+          loveAtOccurrence: null,
+          deduplicationKey: `goal:${stoppedSquare.id}`,
+        })
         return
       }
 
@@ -144,6 +184,21 @@ export const createPrototypeGameFlow = (
             )
           },
         )
+        if (disposed) return
+
+        options.gameState.addLifeHistory({
+          type: 'present-draw',
+          squareId: stoppedSquare.id,
+          chapter: stoppedSquare.chapter,
+          title: 'プレゼント抽選',
+          description: `${drawResult.card.name}を獲得した。`,
+          pointsChange: 0,
+          healthChange: 0,
+          loveChange: 0,
+          cardId: drawResult.card.cardId,
+          loveAtOccurrence: stateAtDraw.love,
+          deduplicationKey: `present-draw:${stoppedSquare.id}`,
+        })
         return
       }
 
@@ -156,10 +211,23 @@ export const createPrototypeGameFlow = (
       await options.showEvent(event)
       if (disposed) return
 
-      options.gameState.applyStatusChanges({
+      const appliedChanges = options.gameState.applyStatusChanges({
         points: event.point,
         health: event.health,
         love: event.love,
+      })
+      options.gameState.addLifeHistory({
+        type: 'normal-event',
+        squareId: stoppedSquare.id,
+        chapter: stoppedSquare.chapter,
+        title: event.title,
+        description: event.description,
+        pointsChange: appliedChanges.points,
+        healthChange: appliedChanges.health,
+        loveChange: appliedChanges.love,
+        cardId: null,
+        loveAtOccurrence: null,
+        deduplicationKey: `normal-event:${event.eventId}:${stoppedSquare.id}`,
       })
     } finally {
       isBusy = false
