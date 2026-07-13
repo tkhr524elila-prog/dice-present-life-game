@@ -16,7 +16,7 @@ const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">P2-01：60マス・5章表示確認</p>
+    <p class="development-label">P2-02：マス判定・視認性確認</p>
   `
 
   app.appendChild(sceneContainer)
@@ -39,6 +39,7 @@ const showThreeScene = () => {
     setPhase: diceControls.setPhase,
     setResult: diceControls.setResult,
     setCurrentSquare: diceControls.setCurrentSquare,
+    setCurrentSquareType: diceControls.setCurrentSquareType,
     setCurrentChapter: diceControls.setCurrentChapter,
   })
 

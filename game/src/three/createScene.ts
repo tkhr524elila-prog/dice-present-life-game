@@ -107,7 +107,7 @@ export const createScene = (container: HTMLElement): SceneController => {
 
     prototypeDice.group.position
       .copy(squarePosition)
-      .add(new THREE.Vector3(2.7, 1.05, -1.8))
+      .add(new THREE.Vector3(4.4, 1.05, 0))
 
     if (immediate) {
       camera.position.copy(cameraPositionGoal)
@@ -142,6 +142,7 @@ export const createScene = (container: HTMLElement): SceneController => {
 
     prototypeDice.update(time)
     prototypePlayer.update(time)
+    board.update(time)
     camera.position.lerp(cameraPositionGoal, interpolation)
     cameraLookAt.lerp(cameraLookAtGoal, interpolation)
     camera.lookAt(cameraLookAt)

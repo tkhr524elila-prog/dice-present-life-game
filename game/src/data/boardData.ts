@@ -141,7 +141,7 @@ const normal = (
 const gift = (id: number, eventId: string): SquareDefinition => ({
   id,
   type: 'gift',
-  label: 'プレゼントイベント',
+  label: 'プレゼント抽選',
   eventId,
   effects: [effect(0, 0, 0)],
 })
@@ -321,3 +321,13 @@ export const getBoardSquare = (squareId: number) =>
 
 export const getChapter = (chapterNumber: ChapterNumber) =>
   CHAPTERS[chapterNumber - 1]
+
+export const getSquareTypeLabel = (type: SquareType) => {
+  const labels: Record<SquareType, string> = {
+    normal: '通常イベント',
+    gift: 'プレゼント抽選',
+    stop: '強制ストップ',
+    goal: 'ゴール',
+  }
+  return labels[type]
+}

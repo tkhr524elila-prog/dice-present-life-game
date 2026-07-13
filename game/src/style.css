@@ -77,6 +77,14 @@ button {
   letter-spacing: 0.04em;
 }
 
+.current-square-type {
+  margin: -4px 0 0;
+  color: #7565bd;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
 .current-chapter {
   margin: 0;
   color: #38365f;

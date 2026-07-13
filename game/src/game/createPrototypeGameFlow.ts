@@ -1,4 +1,8 @@
-import { getBoardSquare } from '../data/boardData'
+import {
+  BOARD_SQUARES,
+  getBoardSquare,
+  getSquareTypeLabel,
+} from '../data/boardData'
 import type { DiceValue } from '../three/createPrototypeDice'
 
 export type PrototypeTurnPhase =
@@ -7,6 +11,7 @@ export type PrototypeTurnPhase =
   | 'moving'
   | 'chapter'
   | 'event'
+  | 'finished'
 
 type PrototypeGameFlowOptions = {
   rollDice: () => Promise<DiceValue>
@@ -16,6 +21,7 @@ type PrototypeGameFlowOptions = {
   setPhase: (phase: PrototypeTurnPhase) => void
   setResult: (value: DiceValue) => void
   setCurrentSquare: (squareNumber: number) => void
+  setCurrentSquareType: (squareType: string) => void
   setCurrentChapter: (chapterNumber: number, chapterTitle: string) => void
 }
 
@@ -33,8 +39,10 @@ export const createPrototypeGameFlow = (
   let isBusy = false
   let disposed = false
   const shownChapters = new Set<number>([1])
+  const completedForcedStops = new Set<number>()
 
   options.setCurrentSquare(currentSquare)
+  options.setCurrentSquareType('通常イベント')
   options.setCurrentChapter(1, '青春の草原')
   options.setPhase('ready')
 
@@ -51,7 +59,18 @@ export const createPrototypeGameFlow = (
       options.setResult(diceValue)
       options.setPhase('moving')
 
-      const destination = Math.min(currentSquare + diceValue, LAST_SQUARE)
+      const directDestination = Math.min(
+        currentSquare + diceValue,
+        LAST_SQUARE,
+      )
+      const forcedStop = BOARD_SQUARES.find(
+        (square) =>
+          square.id > currentSquare &&
+          square.id <= directDestination &&
+          square.type === 'stop' &&
+          !completedForcedStops.has(square.id),
+      )
+      const destination = forcedStop?.id ?? directDestination
 
       for (
         let nextSquare = currentSquare + 1;
@@ -66,6 +85,7 @@ export const createPrototypeGameFlow = (
 
         const square = getBoardSquare(currentSquare)
         if (square) {
+          options.setCurrentSquareType(getSquareTypeLabel(square.type))
           options.setCurrentChapter(square.chapter, square.chapterTitle)
 
           if (!shownChapters.has(square.chapter)) {
@@ -75,6 +95,10 @@ export const createPrototypeGameFlow = (
             if (disposed) return
             options.setPhase('moving')
           }
+
+          if (square.type === 'stop') {
+            completedForcedStops.add(square.id)
+          }
         }
       }
 
@@ -82,7 +106,9 @@ export const createPrototypeGameFlow = (
       await options.showEvent()
     } finally {
       isBusy = false
-      if (!disposed) options.setPhase('ready')
+      if (!disposed) {
+        options.setPhase(currentSquare === LAST_SQUARE ? 'finished' : 'ready')
+      }
     }
   }
 
