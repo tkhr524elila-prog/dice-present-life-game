@@ -9,7 +9,7 @@ const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">P1-02：Three.js表示確認</p>
+    <p class="development-label">P1-04：仮マップ・主人公表示確認</p>
   `
 
   app.appendChild(sceneContainer)

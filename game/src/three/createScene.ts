@@ -1,31 +1,35 @@
 import * as THREE from 'three'
+import { createPrototypeBoard } from './createPrototypeBoard'
+import { createPrototypePlayer } from './createPrototypePlayer'
 
 export const createScene = (container: HTMLElement): (() => void) => {
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x87bce8)
 
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
-  camera.position.set(8, 6, 10)
-  camera.lookAt(0, 0, 0)
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100)
+  const cameraTarget = new THREE.Vector3(0, 0, 0)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.shadowMap.enabled = true
+  renderer.domElement.setAttribute(
+    'aria-label',
+    '仮マス10個と仮主人公を表示する3D確認画面',
+  )
   container.appendChild(renderer.domElement)
 
-  const groundGeometry = new THREE.PlaneGeometry(30, 30)
-  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x6fa968 })
+  const groundGeometry = new THREE.PlaneGeometry(24, 12)
+  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x76b978 })
   const ground = new THREE.Mesh(groundGeometry, groundMaterial)
   ground.rotation.x = -Math.PI / 2
   ground.receiveShadow = true
   scene.add(ground)
 
-  const cubeGeometry = new THREE.BoxGeometry(2, 2, 2)
-  const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xf2a65a })
-  const cube = new THREE.Mesh(cubeGeometry, cubeMaterial)
-  cube.position.y = 1
-  cube.castShadow = true
-  scene.add(cube)
+  const prototypeBoard = createPrototypeBoard()
+  scene.add(prototypeBoard.group)
+
+  const prototypePlayer = createPrototypePlayer(prototypeBoard.startPosition)
+  scene.add(prototypePlayer.group)
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
   scene.add(ambientLight)
@@ -36,10 +40,18 @@ export const createScene = (container: HTMLElement): (() => void) => {
   scene.add(directionalLight)
 
   const resize = () => {
-    const width = container.clientWidth
-    const height = container.clientHeight
+    const width = Math.max(container.clientWidth, 1)
+    const height = Math.max(container.clientHeight, 1)
+    const aspect = width / height
+    const cameraDistanceScale = Math.max(1, 1.5 / aspect)
 
-    camera.aspect = width / height
+    camera.aspect = aspect
+    camera.position.set(
+      0,
+      10 * cameraDistanceScale,
+      15 * cameraDistanceScale,
+    )
+    camera.lookAt(cameraTarget)
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
   }
@@ -47,20 +59,19 @@ export const createScene = (container: HTMLElement): (() => void) => {
   window.addEventListener('resize', resize)
   resize()
 
-  renderer.setAnimationLoop((time) => {
-    const elapsedTime = time * 0.001
-    cube.rotation.x = elapsedTime * 0.25
-    cube.rotation.y = elapsedTime * 0.4
+  renderer.setAnimationLoop(() => {
     renderer.render(scene, camera)
   })
 
   return () => {
     window.removeEventListener('resize', resize)
     renderer.setAnimationLoop(null)
+    scene.remove(prototypePlayer.group)
+    scene.remove(prototypeBoard.group)
+    prototypePlayer.dispose()
+    prototypeBoard.dispose()
     groundGeometry.dispose()
     groundMaterial.dispose()
-    cubeGeometry.dispose()
-    cubeMaterial.dispose()
     renderer.dispose()
     renderer.domElement.remove()
   }
