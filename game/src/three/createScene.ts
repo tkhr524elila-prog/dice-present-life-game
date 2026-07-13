@@ -1,8 +1,14 @@
 import * as THREE from 'three'
 import { createPrototypeBoard } from './createPrototypeBoard'
+import { createPrototypeDice, type DiceValue } from './createPrototypeDice'
 import { createPrototypePlayer } from './createPrototypePlayer'
 
-export const createScene = (container: HTMLElement): (() => void) => {
+type SceneController = {
+  rollDice: () => Promise<DiceValue>
+  dispose: () => void
+}
+
+export const createScene = (container: HTMLElement): SceneController => {
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x87bce8)
 
@@ -14,7 +20,7 @@ export const createScene = (container: HTMLElement): (() => void) => {
   renderer.shadowMap.enabled = true
   renderer.domElement.setAttribute(
     'aria-label',
-    '仮マス10個と仮主人公を表示する3D確認画面',
+    '仮マス10個、仮主人公、3Dサイコロを表示する確認画面',
   )
   container.appendChild(renderer.domElement)
 
@@ -30,6 +36,9 @@ export const createScene = (container: HTMLElement): (() => void) => {
 
   const prototypePlayer = createPrototypePlayer(prototypeBoard.startPosition)
   scene.add(prototypePlayer.group)
+
+  const prototypeDice = createPrototypeDice()
+  scene.add(prototypeDice.group)
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
   scene.add(ambientLight)
@@ -59,20 +68,26 @@ export const createScene = (container: HTMLElement): (() => void) => {
   window.addEventListener('resize', resize)
   resize()
 
-  renderer.setAnimationLoop(() => {
+  renderer.setAnimationLoop((time) => {
+    prototypeDice.update(time)
     renderer.render(scene, camera)
   })
 
-  return () => {
-    window.removeEventListener('resize', resize)
-    renderer.setAnimationLoop(null)
-    scene.remove(prototypePlayer.group)
-    scene.remove(prototypeBoard.group)
-    prototypePlayer.dispose()
-    prototypeBoard.dispose()
-    groundGeometry.dispose()
-    groundMaterial.dispose()
-    renderer.dispose()
-    renderer.domElement.remove()
+  return {
+    rollDice: prototypeDice.roll,
+    dispose: () => {
+      window.removeEventListener('resize', resize)
+      renderer.setAnimationLoop(null)
+      scene.remove(prototypeDice.group)
+      scene.remove(prototypePlayer.group)
+      scene.remove(prototypeBoard.group)
+      prototypeDice.dispose()
+      prototypePlayer.dispose()
+      prototypeBoard.dispose()
+      groundGeometry.dispose()
+      groundMaterial.dispose()
+      renderer.dispose()
+      renderer.domElement.remove()
+    },
   }
 }

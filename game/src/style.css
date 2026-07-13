@@ -51,6 +51,69 @@ button {
   pointer-events: none;
 }
 
+.dice-controls {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  bottom: 24px;
+  display: grid;
+  min-width: 220px;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 14px 36px rgb(38 46 82 / 26%);
+  color: #38365f;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.dice-result {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.dice-roll-button {
+  min-width: 220px;
+  padding: 13px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6858c7, #a456a4);
+  box-shadow: 0 6px 0 #4f438f;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dice-roll-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #4f438f;
+}
+
+.dice-roll-button:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #4f438f;
+}
+
+.dice-roll-button:focus-visible {
+  outline: 4px solid #ffffff;
+  outline-offset: 4px;
+}
+
+.dice-roll-button:disabled {
+  background: #918da7;
+  box-shadow: 0 3px 0 #6e6a80;
+  cursor: wait;
+}
+
 .title-screen {
   position: relative;
   display: grid;
@@ -180,12 +243,24 @@ button {
   .game-description {
     margin: 20px 0 26px;
   }
+
+  .dice-controls {
+    right: 16px;
+    bottom: 16px;
+    min-width: 190px;
+    padding: 14px;
+  }
+
+  .dice-roll-button {
+    min-width: 190px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .scene-container,
   .title-screen,
-  .start-button {
+  .start-button,
+  .dice-roll-button {
     transition-duration: 0ms;
   }
 }
