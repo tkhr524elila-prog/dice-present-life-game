@@ -72,7 +72,7 @@ export const verifyLifeCardSettlementRules = () => {
     result.lodgerChanges.points !== -1_000 ||
     result.lodgerChanges.health !== 20 ||
     result.lodgerChanges.love !== 20 ||
-    result.troubleTotal !== -5_500 ||
+    result.troubleTotal !== -1_540 ||
     result.prizeCards.length !== 1 ||
     result.prizeCards.some(({ cardId }) => cardId.startsWith('TROUBLE_'))
   ) {

@@ -95,9 +95,16 @@ export const createBoardV2 = (): BoardV2 => {
   const frameGeometry = new RoundedBoxGeometry(1.68, 0.3, 1.68, 3, 0.13)
   const centerGeometry = new RoundedBoxGeometry(1.46, 0.2, 1.46, 3, 0.085)
   const connectorGeometry = new THREE.CylinderGeometry(0.12, 0.12, 1, 10)
-  const connectorMaterial = new THREE.MeshStandardMaterial({ color: 0xdbe2c4 })
-  const materials = new Set<THREE.Material>([connectorMaterial])
+  const connectorMaterials = {
+    common: new THREE.MeshStandardMaterial({ color: 0xdbe2c4 }),
+    playboy: new THREE.MeshStandardMaterial({ color: 0x9c4bb1 }),
+    'pure-love': new THREE.MeshStandardMaterial({ color: 0xf4d8e7 }),
+  } as const
+  const materials = new Set<THREE.Material>(Object.values(connectorMaterials))
+  const sharedMaterials = new Map<string, THREE.MeshStandardMaterial>()
   const textures = new Set<THREE.Texture>()
+  const textureCache = new Map<string, THREE.Texture>()
+  const topMaterials = new Map<string, THREE.MeshStandardMaterial>()
   const squarePositions = new Map<string, THREE.Vector3>()
   const routeObjects = new Map<RouteTypeV2, THREE.Object3D[]>()
   const animated: Array<{
@@ -108,6 +115,15 @@ export const createBoardV2 = (): BoardV2 => {
   }> = []
   let selectedRoute: 'playboy' | 'pure-love' | null = null
   let currentPhysicalId = '001'
+
+  const getSharedMaterial = (key: string, color: string, roughness: number) => {
+    const cached = sharedMaterials.get(key)
+    if (cached) return cached
+    const value = new THREE.MeshStandardMaterial({ color, roughness })
+    sharedMaterials.set(key, value)
+    materials.add(value)
+    return value
+  }
 
   BOARD_SQUARES_V2.forEach((square) => {
     const source = square.positionPlaceholder
@@ -131,14 +147,15 @@ export const createBoardV2 = (): BoardV2 => {
       const to = squarePositions.get(nextId)
       if (!to) return
       const direction = to.clone().sub(from)
-      const connector = new THREE.Mesh(connectorGeometry, connectorMaterial)
+      const connectorRoute = square.progress === 40 || nextId === '061' ? 'common' : square.route
+      const connector = new THREE.Mesh(connectorGeometry, connectorMaterials[connectorRoute])
       connector.name = `PathV2-${key}`
       connector.position.copy(from).add(to).multiplyScalar(0.5)
       connector.quaternion.setFromUnitVectors(UP, direction.clone().normalize())
       connector.scale.y = direction.length()
       connector.castShadow = true
       addRouteObject(
-        square.progress === 40 || nextId === '061' ? 'common' : square.route,
+        connectorRoute,
         connector,
       )
     })
@@ -151,9 +168,11 @@ export const createBoardV2 = (): BoardV2 => {
       : square.route === 'pure-love'
         ? '#fff0f7'
         : CHAPTER_COLORS[square.chapter - 1]!
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.58 })
-    const sideMaterial = new THREE.MeshStandardMaterial({ color: getSquareColor(square), roughness: 0.62 })
-    const texture = createFaceTexture(square)
+    const squareColor = getSquareColor(square)
+    const frameMaterial = getSharedMaterial(`frame:${frameColor}`, frameColor, 0.58)
+    const sideMaterial = getSharedMaterial(`side:${squareColor}`, squareColor, 0.62)
+    const texture = textureCache.get(square.physicalId) ?? createFaceTexture(square)
+    textureCache.set(square.physicalId, texture)
     const topMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: texture,
@@ -165,6 +184,7 @@ export const createBoardV2 = (): BoardV2 => {
     materials.add(sideMaterial)
     materials.add(topMaterial)
     textures.add(texture)
+    topMaterials.set(square.physicalId, topMaterial)
 
     const frame = new THREE.Mesh(frameGeometry, frameMaterial)
     frame.name = `SquareV2-Frame-${square.physicalId}`
@@ -179,7 +199,9 @@ export const createBoardV2 = (): BoardV2 => {
     center.castShadow = true
     addRouteObject(square.route, frame)
     addRouteObject(square.route, center)
-    animated.push({ square, center, material: topMaterial, baseY: center.position.y })
+    if (square.squareType !== 'normal') {
+      animated.push({ square, center, material: topMaterial, baseY: center.position.y })
+    }
   })
 
   const markerMaterial = new THREE.MeshBasicMaterial({
@@ -213,7 +235,11 @@ export const createBoardV2 = (): BoardV2 => {
     startPosition: squarePositions.get('001')!.clone().add(new THREE.Vector3(-0.4, 0.4, 0.35)),
     squarePositions,
     setCurrentSquare: (physicalId) => {
+      const previousMaterial = topMaterials.get(currentPhysicalId)
+      if (previousMaterial) previousMaterial.emissiveIntensity = 0.07
       currentPhysicalId = physicalId
+      const currentMaterial = topMaterials.get(currentPhysicalId)
+      if (currentMaterial) currentMaterial.emissiveIntensity = 0.38
       const position = squarePositions.get(physicalId)
       if (position) marker.position.set(position.x, position.y + 0.38, position.z)
     },
@@ -242,6 +268,9 @@ export const createBoardV2 = (): BoardV2 => {
       connectorGeometry.dispose()
       materials.forEach((material) => material.dispose())
       textures.forEach((texture) => texture.dispose())
+      textureCache.clear()
+      sharedMaterials.clear()
+      topMaterials.clear()
       group.clear()
     },
   }

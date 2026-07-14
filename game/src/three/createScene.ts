@@ -8,6 +8,7 @@ import { createBoardV2 } from './createBoardV2'
 import { createPrototypeDice, type DiceValue } from './createPrototypeDice'
 import { createPrototypePlayer } from './createPrototypePlayer'
 import { createChapterScenery } from './createChapterScenery'
+import { createWorldGroundV2 } from './createWorldGroundV2'
 
 type SceneController = {
   rollDice: () => Promise<DiceValue>
@@ -50,16 +51,8 @@ export const createScene = (container: HTMLElement): SceneController => {
   )
   container.appendChild(renderer.domElement)
 
-  const groundGeometry = new THREE.PlaneGeometry(52, 190)
-  const groundMaterial = new THREE.MeshStandardMaterial({
-    color: initialChapter.environment.ground,
-    roughness: 0.95,
-  })
-  const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-  ground.rotation.x = -Math.PI / 2
-  ground.position.set(0, -1.1, 84)
-  ground.receiveShadow = true
-  scene.add(ground)
+  const worldGround = createWorldGroundV2()
+  scene.add(worldGround.group)
 
   const board = createBoardV2()
   scene.add(board.group)
@@ -89,7 +82,7 @@ export const createScene = (container: HTMLElement): SceneController => {
 
   const environmentTargets = {
     background: backgroundColor.clone(),
-    ground: groundMaterial.color.clone(),
+    ground: new THREE.Color(initialChapter.environment.ground),
     fog: scene.fog.color.clone(),
     ambientLight: ambientLight.color.clone(),
     directionalLight: directionalLight.color.clone(),
@@ -169,7 +162,6 @@ export const createScene = (container: HTMLElement): SceneController => {
     cameraLookAt.lerp(cameraLookAtGoal, interpolation)
     camera.lookAt(cameraLookAt)
     backgroundColor.lerp(environmentTargets.background, interpolation)
-    groundMaterial.color.lerp(environmentTargets.ground, interpolation)
     scene.fog?.color.lerp(environmentTargets.fog, interpolation)
     ambientLight.color.lerp(environmentTargets.ambientLight, interpolation)
     directionalLight.color.lerp(
@@ -213,8 +205,7 @@ export const createScene = (container: HTMLElement): SceneController => {
       prototypePlayer.dispose()
       board.dispose()
       chapterScenery.dispose()
-      groundGeometry.dispose()
-      groundMaterial.dispose()
+      worldGround.dispose()
       renderer.dispose()
       renderer.domElement.remove()
     },

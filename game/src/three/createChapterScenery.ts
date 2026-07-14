@@ -21,6 +21,12 @@ const getAnchor = (progress: number) => {
   return average
 }
 
+const getPhysicalAnchor = (physicalId: string) => {
+  const position = BOARD_SQUARES_V2.find((square) => square.physicalId === physicalId)?.positionPlaceholder
+  if (!position) throw new Error(`${physicalId}の背景用座標がありません。`)
+  return new THREE.Vector3(position.x, position.y, position.z)
+}
+
 export const createChapterScenery = (): ChapterScenery => {
   const group = new THREE.Group()
   group.name = 'ChapterScenery'
@@ -149,6 +155,57 @@ export const createChapterScenery = (): ChapterScenery => {
       cloud.position.copy(anchor).add(new THREE.Vector3(-side * 5.5, 4.4 + index * 0.5, 0))
       parent.add(cloud)
       animated.push({ object: cloud, baseY: cloud.position.y, speed: 0.4 + index * 0.08 })
+    })
+  }
+
+  // 第3章：Aはネオン、Bはベンチと花で分岐を明確にする。
+  {
+    const parent = chapterGroups.get(3)!
+    ;[42, 47, 52, 57].forEach((progress, index) => {
+      const a = getPhysicalAnchor(`${String(progress).padStart(3, '0')}-A`)
+      const neonColor = index % 2 ? 0xff4fa8 : 0x9c62ff
+      const neon = addMesh(parent, new THREE.TorusGeometry(0.62, 0.075, 8, 24), material(neonColor, neonColor), a.clone().add(new THREE.Vector3(-2.8, 1.1, 0)))
+      neon.rotation.x = Math.PI / 2
+      animated.push({ object: neon, baseY: neon.position.y, speed: 1.05 + index * 0.08 })
+
+      const b = getPhysicalAnchor(`${String(progress).padStart(3, '0')}-B`)
+      const benchPosition = b.clone().add(new THREE.Vector3(2.7, -0.45, 0))
+      addMesh(parent, new THREE.BoxGeometry(1.25, 0.16, 0.42), material(0xd7a97c), benchPosition)
+      addMesh(parent, new THREE.BoxGeometry(0.12, 0.62, 0.12), material(0x806750), benchPosition.clone().add(new THREE.Vector3(-0.45, -0.28, 0)))
+      addMesh(parent, new THREE.BoxGeometry(0.12, 0.62, 0.12), material(0x806750), benchPosition.clone().add(new THREE.Vector3(0.45, -0.28, 0)))
+      ;[-0.65, 0.65].forEach((offset) => {
+        addMesh(parent, new THREE.SphereGeometry(0.14, 10, 8), material(0xffd4e5, 0xff94c2), b.clone().add(new THREE.Vector3(2.7 + offset, -0.35, 0.65)))
+      })
+    })
+
+    const branch = getPhysicalAnchor('040')
+    const branchPost = addMesh(parent, new THREE.CylinderGeometry(0.09, 0.12, 2.2, 8), material(0x61506f), branch.clone().add(new THREE.Vector3(0, 0.1, 1.25)))
+    const aSign = addMesh(parent, new THREE.BoxGeometry(1.5, 0.42, 0.12), material(0xb72d78, 0x7a2057), branchPost.position.clone().add(new THREE.Vector3(-0.75, 0.5, 0)))
+    const bSign = addMesh(parent, new THREE.BoxGeometry(1.5, 0.42, 0.12), material(0xf3a8c8, 0xe788b1), branchPost.position.clone().add(new THREE.Vector3(0.75, 0, 0)))
+    aSign.rotation.y = -0.22; bSign.rotation.y = 0.22
+
+    const merge = getPhysicalAnchor('061')
+    const archMaterial = material(0xf2d58c, 0xdcae42)
+    addMesh(parent, new THREE.BoxGeometry(0.18, 2.5, 0.18), archMaterial, merge.clone().add(new THREE.Vector3(-1.5, 0.2, -1)))
+    addMesh(parent, new THREE.BoxGeometry(0.18, 2.5, 0.18), archMaterial, merge.clone().add(new THREE.Vector3(1.5, 0.2, -1)))
+    addMesh(parent, new THREE.BoxGeometry(3.2, 0.2, 0.2), archMaterial, merge.clone().add(new THREE.Vector3(0, 1.45, -1)))
+  }
+
+  // 第5章：NISA2枠目の道標と、ゴールへ近づく金色の光。
+  {
+    const parent = chapterGroups.get(5)!
+    const nisa = getPhysicalAnchor('083')
+    const signMaterial = material(0x54a7b8, 0x53d3e5)
+    addMesh(parent, new THREE.CylinderGeometry(0.08, 0.11, 2.1, 8), material(0x5e6570), nisa.clone().add(new THREE.Vector3(3, 0, 0)))
+    const chartSign = addMesh(parent, new THREE.BoxGeometry(1.8, 1.05, 0.12), signMaterial, nisa.clone().add(new THREE.Vector3(3, 1.05, 0)))
+    chartSign.rotation.y = -0.12
+    ;[96, 98, 100].forEach((progress, progressIndex) => {
+      const anchor = getPhysicalAnchor(String(progress).padStart(3, '0'))
+      for (let particle = 0; particle < 6 + progressIndex * 4; particle += 1) {
+        const angle = particle / (6 + progressIndex * 4) * Math.PI * 2
+        const light = addMesh(parent, new THREE.SphereGeometry(0.06 + progressIndex * 0.02, 8, 6), material(0xffe48c, 0xffcf43), anchor.clone().add(new THREE.Vector3(Math.cos(angle) * (2.2 + progressIndex * 0.25), 0.4 + (particle % 4) * 0.5, Math.sin(angle) * 1.4)))
+        animated.push({ object: light, baseY: light.position.y, speed: 0.65 + particle * 0.025 })
+      }
     })
   }
 

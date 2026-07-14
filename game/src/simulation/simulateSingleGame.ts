@@ -1,201 +1,111 @@
-import { BOARD_SQUARES, getBoardSquare } from '../data/boardData'
-import { drawEventLifeCard } from '../data/eventLifeCardRules'
+import { getBoardSquareV2 } from '../data/v2/boardDataV2'
+import { getLifeChoiceV2 } from '../data/v2/lifeChoiceDataV2'
 import { getLifeCardById, LIFE_CARD_DATA } from '../data/lifeCardData'
-import { getLifeChoiceBySquareId } from '../data/lifeChoiceData'
-import { getNormalEventBySquareId } from '../data/normalEventData'
-import { applyJobModifiers } from '../game/applyJobModifiers'
 import { calculateSettlement } from '../game/calculateSettlement'
 import { drawLifeCard } from '../game/drawLifeCard'
 import { createGameStateStore } from '../game/gameState'
-import { resolveTrafficAccident } from '../game/resolveTrafficAccident'
-import type {
-  SimulationChoices,
-  SimulationGameResult,
-  SimulationPattern,
-} from './simulationTypes'
-
-const LAST_SQUARE = 60
+import { resolveEventV2 } from '../game/v2/applyEventV2'
+import { createMovementPathV2 } from '../game/v2/resolveRouteV2'
+import type { SimulationChoices, SimulationGameResult, SimulationPattern } from './simulationTypes'
 
 const randomBoolean = (random: () => number) => random() < 0.5
+const createRandomChoices = (random: () => number): SimulationChoices => {
+  const hasNisa = randomBoolean(random)
+  return {
+    jobType: randomBoolean(random) ? 'foreign-insurance' : 'local-agency',
+    romanceType: randomBoolean(random) ? 'playboy' : 'serious',
+    nisaSlots: hasNisa ? (randomBoolean(random) ? 2 : 1) : 0,
+    hasMedicalInsurance: randomBoolean(random),
+    isCarInsuranceActive: randomBoolean(random),
+  }
+}
 
-const createRandomChoices = (random: () => number): SimulationChoices => ({
-  jobType: randomBoolean(random) ? 'foreign-insurance' : 'local-agency',
-  romanceType: randomBoolean(random) ? 'playboy' : 'serious',
-  hasNisa: randomBoolean(random),
-  hasMedicalInsurance: randomBoolean(random),
-  isCarInsuranceActive: randomBoolean(random),
-})
-
-const findChoiceOption = (
-  squareId: number,
-  choices: SimulationChoices,
-) => {
-  const choice = getLifeChoiceBySquareId(squareId)
-  if (!choice) throw new Error(`マス${squareId}の選択データが見つかりません。`)
-
-  const option = choice.options.find(({ selection }) => {
+const findChoice = (squareId: number, choices: SimulationChoices) => {
+  const data = getLifeChoiceV2(squareId, choices.nisaSlots > 0)
+  if (!data) throw new Error(`マス${squareId}のV2選択データがありません。`)
+  const option = data.options.find(({ selection }) => {
     switch (selection.kind) {
-      case 'job':
-        return selection.value === choices.jobType
-      case 'romance':
-        return selection.value === choices.romanceType
-      case 'nisa':
-        return selection.value === choices.hasNisa
-      case 'medical-insurance':
-        return selection.value === choices.hasMedicalInsurance
-      case 'car-insurance':
-        return selection.value === choices.isCarInsuranceActive
+      case 'job': return selection.value === choices.jobType
+      case 'romance': return selection.value === choices.romanceType
+      case 'nisa': return selection.value === (choices.nisaSlots > 0)
+      case 'nisa-2': return selection.value === (choices.nisaSlots === 2)
+      case 'medical-insurance': return selection.value === choices.hasMedicalInsurance
+      case 'car-insurance': return selection.value === choices.isCarInsuranceActive
     }
   })
-
-  if (!option) throw new Error(`マス${squareId}の選択肢が見つかりません。`)
+  if (!option) throw new Error(`マス${squareId}のV2選択肢がありません。`)
   return option
 }
 
-export const simulateSingleGame = (
-  pattern: SimulationPattern,
-  random: () => number,
-): SimulationGameResult => {
-  const choices = pattern.choices === 'random'
-    ? createRandomChoices(random)
-    : pattern.choices
-  const gameState = createGameStateStore()
-  let turnCount = 0
-  let presentStopCount = 0
-  let normalEventCount = 0
-  let accidentCheckCount = 0
-  let accidentOccurred = 0
-  const normalSquareStops: number[] = []
+export const simulateSingleGame = (pattern: SimulationPattern, random: () => number): SimulationGameResult => {
+  const choices = pattern.choices === 'random' ? createRandomChoices(random) : pattern.choices
+  const state = createGameStateStore()
+  let turns = 0
+  let presents = 0
+  let normalEvents = 0
+  let guaranteedEvents = 0
+  let accidentChecks = 0
+  let eventPrizeCount = 0
+  let drawCardCount = 0
+  const normalStops: string[] = []
 
-  while (gameState.getState().currentSquare < LAST_SQUARE) {
-    turnCount += 1
-    const diceValue = Math.floor(random() * 6) + 1
-    const stateBeforeMovement = gameState.getState()
-    const directDestination = Math.min(
-      stateBeforeMovement.currentSquare + diceValue,
-      LAST_SQUARE,
-    )
-    const forcedStop = BOARD_SQUARES.find(
-      (square) =>
-        square.id > stateBeforeMovement.currentSquare &&
-        square.id <= directDestination &&
-        square.type === 'stop' &&
-        !stateBeforeMovement.processedForcedStops.has(square.id),
-    )
-    const destination = forcedStop?.id ?? directDestination
-    gameState.setCurrentSquare(destination)
-    const stoppedSquare = getBoardSquare(destination)
-    if (!stoppedSquare) throw new Error(`マス${destination}が見つかりません。`)
+  while (state.getState().currentProgress < 100) {
+    turns += 1
+    const before = state.getState()
+    const path = createMovementPathV2(before.currentPhysicalId, Math.floor(random() * 6) + 1, before.selectedRoute, before.processedForcedStops)
+    const physicalId = path[path.length - 1]
+    if (!physicalId) throw new Error('V2移動先がありません。')
+    const square = getBoardSquareV2(physicalId)
+    if (!square) throw new Error(`物理マス${physicalId}がありません。`)
+    state.setCurrentPosition(physicalId, square.progress)
+    if (square.squareType === 'goal') break
 
-    if (stoppedSquare.type === 'goal') break
-
-    if (stoppedSquare.type === 'stop') {
-      gameState.completeLifeChoice(
-        stoppedSquare.id,
-        findChoiceOption(stoppedSquare.id, choices),
-      )
+    if (square.squareType === 'forced-stop') {
+      state.completeLifeChoice(square.progress, findChoice(square.progress, choices))
+      continue
+    }
+    if (square.squareType === 'present-draw') {
+      presents += 1
+      drawCardCount += 1
+      const drawState = state.getState()
+      const drawn = drawLifeCard({ love: drawState.love, hasGuaranteedSukiyaTicket: drawState.hasGuaranteedSukiyaTicket, random })
+      state.acquireLifeCard(drawn.card.cardId, square.progress, drawn.isGuaranteed)
       continue
     }
 
-    if (stoppedSquare.type === 'gift') {
-      presentStopCount += 1
-      const stateAtDraw = gameState.getState()
-      const drawResult = drawLifeCard({
-        love: stateAtDraw.love,
-        hasGuaranteedSukiyaTicket: stateAtDraw.hasGuaranteedSukiyaTicket,
-        random,
-      })
-      gameState.acquireLifeCard(
-        drawResult.card.cardId,
-        stoppedSquare.id,
-        drawResult.isGuaranteed,
-      )
-      continue
-    }
-
-    normalEventCount += 1
-    normalSquareStops.push(stoppedSquare.id)
-    if (stoppedSquare.id === 33) {
-      accidentCheckCount += 1
-      const stateAtAccident = gameState.getState()
-      const accident = resolveTrafficAccident(
-        stateAtAccident.isCarInsuranceActive,
-        random,
-      )
-      if (accident.event.eventId !== 'EV_ACCIDENT_NONE') accidentOccurred += 1
-      gameState.applyStatusChanges({
-        points: accident.event.point,
-        health: accident.event.health,
-        love: accident.event.love,
-      })
-      if (accident.cardId) {
-        gameState.acquireLifeCard(accident.cardId, stoppedSquare.id, false)
-      }
-      continue
-    }
-
-    const stateBeforeEvent = gameState.getState()
-    const baseEvent = getNormalEventBySquareId(
-      stoppedSquare.id,
-      stateBeforeEvent.romanceType,
-    )
-    if (!baseEvent) continue
-    const event = applyJobModifiers(baseEvent, stateBeforeEvent.jobType)
-    gameState.applyStatusChanges({
-      points: event.point,
-      health: event.health,
-      love: event.love,
-    })
-    const eventCardId = drawEventLifeCard(event.eventId, random)
-    if (eventCardId) {
-      gameState.acquireLifeCard(eventCardId, stoppedSquare.id, false)
+    normalEvents += 1
+    normalStops.push(square.displayId)
+    if (square.progress === 67) accidentChecks += 1
+    const beforeEvent = state.getState()
+    const resolved = resolveEventV2(square, beforeEvent.jobType, beforeEvent.isCarInsuranceActive)
+    state.applyStatusChanges({ points: resolved.display.point, health: resolved.display.health, love: resolved.display.love })
+    if (resolved.guaranteedCardId) {
+      guaranteedEvents += 1
+      if (getLifeCardById(resolved.guaranteedCardId).type === 'prize') eventPrizeCount += 1
+      state.acquireLifeCard(resolved.guaranteedCardId, square.progress, false)
     }
   }
 
-  const stateAtGoal = gameState.getState()
-  const settlement = calculateSettlement(stateAtGoal, random())
+  const atGoal = state.getState()
+  const settlement = calculateSettlement({ ...atGoal, hasNisaSecondSlot: atGoal.hasNisaSecondSlot }, Array.from({ length: choices.nisaSlots }, random))
   const cardCounts: SimulationGameResult['cardCounts'] = {}
-  stateAtGoal.ownedLifeCards.forEach(({ cardId }) => {
-    cardCounts[cardId] = (cardCounts[cardId] ?? 0) + 1
-  })
-  const prizeCards = stateAtGoal.ownedLifeCards.filter(
-    ({ cardId }) => getLifeCardById(cardId).type === 'prize',
-  )
-  const prizeValue = prizeCards.reduce(
-    (total, { cardId }) => total + getLifeCardById(cardId).prizeValue,
-    0,
-  )
-  const troubleCount = stateAtGoal.ownedLifeCards.filter(
-    ({ cardId }) => getLifeCardById(cardId).type === 'trouble',
-  ).length
-
-  LIFE_CARD_DATA.forEach(({ cardId }) => {
-    cardCounts[cardId] ??= 0
-  })
+  atGoal.ownedLifeCards.forEach(({ cardId }) => { cardCounts[cardId] = (cardCounts[cardId] ?? 0) + 1 })
+  LIFE_CARD_DATA.forEach(({ cardId }) => { cardCounts[cardId] ??= 0 })
+  const prizeCards = atGoal.ownedLifeCards.filter(({ cardId }) => getLifeCardById(cardId).type === 'prize')
+  const troubleCount = atGoal.ownedLifeCards.filter(({ cardId }) => getLifeCardById(cardId).type === 'trouble').length
+  const estimatedMinutes = turns * 0.48 + normalEvents * 0.22 + presents * 0.16 + atGoal.processedForcedStops.size * 0.42 + 2.5
 
   return {
-    patternId: pattern.id,
-    choices,
-    finalCash: settlement.finalCash,
-    finalHealth: settlement.finalHealth,
-    finalLove: settlement.finalLove,
-    healthMultiplier: settlement.healthMultiplier,
-    pointsAtGoal: stateAtGoal.points,
-    lodgerPointsChange: settlement.lodgerPointsChange,
-    troubleTotal: settlement.troubleTotal,
-    nisaResult: settlement.nisaResult ?? 0,
-    medicalInsuranceBenefit: settlement.medicalInsuranceBenefit,
-    prizeValue,
-    prizeCount: prizeCards.length,
-    troubleCount,
-    lodgerCount: settlement.lodgerCount,
-    cardCounts,
-    turnCount,
-    presentStopCount,
-    normalEventCount,
-    accidentCheckCount,
-    accidentOccurred,
-    forcedStopCount: stateAtGoal.processedForcedStops.size,
-    normalSquareStops,
+    patternId: pattern.id, choices, finalCash: settlement.finalCash,
+    finalHealth: settlement.finalHealth, finalLove: settlement.finalLove,
+    healthMultiplier: settlement.healthMultiplier, pointsAtGoal: atGoal.points,
+    lodgerPointsChange: settlement.lodgerPointsChange, troubleTotal: settlement.troubleTotal,
+    nisaResult: settlement.nisaResult ?? 0, medicalInsuranceBenefit: settlement.medicalInsuranceBenefit,
+    prizeValue: prizeCards.reduce((sum, { cardId }) => sum + getLifeCardById(cardId).prizeValue, 0),
+    prizeCount: prizeCards.length, troubleCount, lodgerCount: settlement.lodgerCount,
+    cardCounts, eventPrizeCount, drawCardCount, turnCount: turns, estimatedMinutes,
+    presentStopCount: presents, normalEventCount: normalEvents,
+    guaranteedCardEventCount: guaranteedEvents, accidentCheckCount: accidentChecks,
+    forcedStopCount: atGoal.processedForcedStops.size, normalSquareStops: normalStops,
   }
 }

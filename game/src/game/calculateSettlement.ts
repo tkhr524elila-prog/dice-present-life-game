@@ -121,10 +121,10 @@ export const verifySettlementCalculationRules = () => {
     patternA.finalLove !== 50 ||
     patternA.nisaResult !== -500 ||
     patternA.medicalInsuranceBenefit !== 1_500 ||
-    patternA.pointsBeforeHealthMultiplier !== 3_500 ||
+    patternA.pointsBeforeHealthMultiplier !== 4_920 ||
     patternA.nisaResults.length !== 1 ||
     patternA.healthMultiplier !== 0.85 ||
-    patternA.finalCash !== 2_975
+    patternA.finalCash !== 4_182
   ) {
     throw new Error('精算テストA（契約あり・低健康・トラブルあり）に失敗しました。')
   }

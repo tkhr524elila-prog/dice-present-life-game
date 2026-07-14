@@ -60,10 +60,6 @@ export const summarizeSimulation = (
     (total, result) => total + result.accidentCheckCount,
     0,
   )
-  const accidents = results.reduce(
-    (total, result) => total + result.accidentOccurred,
-    0,
-  )
   const averageCardCounts: SimulationSummary['prizes']['averageCardCounts'] = {}
   const averageStopsByNormalSquare: Record<string, number> = {}
   LIFE_CARD_DATA.forEach(({ cardId }) => {
@@ -71,15 +67,16 @@ export const summarizeSimulation = (
       results.map(({ cardCounts }) => cardCounts[cardId] ?? 0),
     ), 4)
   })
-  for (let squareId = 1; squareId <= 59; squareId += 1) {
+  const stoppedIds = new Set(results.flatMap(({ normalSquareStops }) => normalSquareStops))
+  stoppedIds.forEach((squareId) => {
     const stops = results.reduce(
       (total, result) => total + result.normalSquareStops.filter(
         (stoppedSquare) => stoppedSquare === squareId,
       ).length,
       0,
     )
-    if (stops > 0) averageStopsByNormalSquare[String(squareId)] = round(stops / results.length, 4)
-  }
+    if (stops > 0) averageStopsByNormalSquare[squareId] = round(stops / results.length, 4)
+  })
 
   return {
     games: results.length,
@@ -101,6 +98,8 @@ export const summarizeSimulation = (
       averageCardCounts,
       averageTroubleCount: round(average(results.map(({ troubleCount }) => troubleCount))),
       averageLodgerCount: round(average(results.map(({ lodgerCount }) => lodgerCount))),
+      averageEventPrizeCount: round(average(results.map(({ eventPrizeCount }) => eventPrizeCount))),
+      averageDrawCardCount: round(average(results.map(({ drawCardCount }) => drawCardCount))),
     },
     statuses: {
       health: summarizeNumbers(healthValues),
@@ -110,10 +109,11 @@ export const summarizeSimulation = (
     },
     progress: {
       averageTurns: round(average(results.map(({ turnCount }) => turnCount))),
+      averageEstimatedMinutes: round(average(results.map(({ estimatedMinutes }) => estimatedMinutes))),
       averagePresentStops: round(average(results.map(({ presentStopCount }) => presentStopCount))),
       averageNormalEvents: round(average(results.map(({ normalEventCount }) => normalEventCount))),
+      averageGuaranteedCardEvents: round(average(results.map(({ guaranteedCardEventCount }) => guaranteedCardEventCount))),
       accidentLandingRate: round(accidentChecks / results.length * 100),
-      accidentRateWhenChecked: accidentChecks === 0 ? 0 : round(accidents / accidentChecks * 100),
       averageForcedStops: round(average(results.map(({ forcedStopCount }) => forcedStopCount))),
       averageStopsByNormalSquare,
     },

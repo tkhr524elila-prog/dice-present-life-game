@@ -1,18 +1,17 @@
 import type { LifeCardId } from '../data/lifeCardData'
 import type { JobType, RomanceType } from '../data/lifeChoiceData'
 
+export type NisaSlots = 0 | 1 | 2
+
 export type SimulationChoices = {
   jobType: JobType
   romanceType: RomanceType
-  hasNisa: boolean
+  nisaSlots: NisaSlots
   hasMedicalInsurance: boolean
   isCarInsuranceActive: boolean
 }
 
-export type SimulationPattern = {
-  id: string
-  choices: SimulationChoices | 'random'
-}
+export type SimulationPattern = { id: string; choices: SimulationChoices | 'random' }
 
 export type SimulationGameResult = {
   patternId: string
@@ -31,32 +30,23 @@ export type SimulationGameResult = {
   troubleCount: number
   lodgerCount: number
   cardCounts: Partial<Record<LifeCardId, number>>
+  eventPrizeCount: number
+  drawCardCount: number
   turnCount: number
+  estimatedMinutes: number
   presentStopCount: number
   normalEventCount: number
+  guaranteedCardEventCount: number
   accidentCheckCount: number
-  accidentOccurred: number
   forcedStopCount: number
-  normalSquareStops: readonly number[]
+  normalSquareStops: readonly string[]
 }
 
-export type NumberSummary = {
-  average: number
-  median: number
-  minimum: number
-  maximum: number
-  standardDeviation: number
-}
+export type NumberSummary = { average: number; median: number; minimum: number; maximum: number; standardDeviation: number }
 
 export type SimulationSummary = {
   games: number
-  cash: NumberSummary & {
-    zeroRate: number
-    under3000Rate: number
-    between3000And7000Rate: number
-    over7000Rate: number
-    atLeast10000Rate: number
-  }
+  cash: NumberSummary & { zeroRate: number; under3000Rate: number; between3000And7000Rate: number; over7000Rate: number; atLeast10000Rate: number }
   prizes: {
     value: NumberSummary
     count: NumberSummary
@@ -64,19 +54,17 @@ export type SimulationSummary = {
     averageCardCounts: Partial<Record<LifeCardId, number>>
     averageTroubleCount: number
     averageLodgerCount: number
+    averageEventPrizeCount: number
+    averageDrawCardCount: number
   }
-  statuses: {
-    health: NumberSummary
-    love: NumberSummary
-    healthBands: Record<string, number>
-    loveBands: Record<string, number>
-  }
+  statuses: { health: NumberSummary; love: NumberSummary; healthBands: Record<string, number>; loveBands: Record<string, number> }
   progress: {
     averageTurns: number
+    averageEstimatedMinutes: number
     averagePresentStops: number
     averageNormalEvents: number
+    averageGuaranteedCardEvents: number
     accidentLandingRate: number
-    accidentRateWhenChecked: number
     averageForcedStops: number
     averageStopsByNormalSquare: Record<string, number>
   }
@@ -95,9 +83,5 @@ export type ComparisonSummary = {
   rightLabel: string
   left: Pick<SimulationSummary, 'games' | 'cash' | 'statuses'>
   right: Pick<SimulationSummary, 'games' | 'cash' | 'statuses'>
-  differenceLeftMinusRight: {
-    cashAverage: number
-    healthAverage: number
-    loveAverage: number
-  }
+  differenceLeftMinusRight: { cashAverage: number; healthAverage: number; loveAverage: number }
 }

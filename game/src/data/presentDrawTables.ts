@@ -13,18 +13,18 @@ type LoveRateAnchor = {
 }
 
 export const LOVE_RATE_ANCHORS: readonly LoveRateAnchor[] = [
-  { cardId: 'PRIZE_SUKIYA', at0: 2, at50: 8, at100: 5 },
+  { cardId: 'PRIZE_SUKIYA', at0: 2, at50: 8, at100: 8 },
   { cardId: 'PRIZE_MCDONALDS', at0: 1, at50: 8, at100: 8 },
-  { cardId: 'PRIZE_RAMEN', at0: 1, at50: 8, at100: 7 },
-  { cardId: 'PRIZE_ICE_CREAM', at0: 2, at50: 8, at100: 5 },
-  { cardId: 'PRIZE_DIAPER', at0: 0.5, at50: 8, at100: 18 },
-  { cardId: 'PRIZE_PICTURE_BOOK', at0: 0.5, at50: 8, at100: 20 },
-  { cardId: 'PRIZE_TOY', at0: 0.5, at50: 8, at100: 25 },
-  { cardId: 'TROUBLE_PROPERTY_TAX', at0: 18, at50: 8, at100: 2 },
-  { cardId: 'TROUBLE_CAR_LOAN', at0: 14, at50: 7, at100: 1 },
-  { cardId: 'TROUBLE_CAR_REPAIR', at0: 16, at50: 7, at100: 2 },
-  { cardId: 'TROUBLE_HOME_REPAIR', at0: 16, at50: 7, at100: 2 },
-  { cardId: 'TROUBLE_CREDIT_CARD_BILL', at0: 20, at50: 7, at100: 2 },
+  { cardId: 'PRIZE_RAMEN', at0: 1, at50: 8, at100: 6 },
+  { cardId: 'PRIZE_ICE_CREAM', at0: 2, at50: 8, at100: 6 },
+  { cardId: 'PRIZE_DIAPER', at0: 0.5, at50: 8, at100: 9 },
+  { cardId: 'PRIZE_PICTURE_BOOK', at0: 0.5, at50: 8, at100: 9 },
+  { cardId: 'PRIZE_TOY', at0: 0.5, at50: 8, at100: 9 },
+  { cardId: 'TROUBLE_PROPERTY_TAX', at0: 18, at50: 8, at100: 9 },
+  { cardId: 'TROUBLE_CAR_LOAN', at0: 14, at50: 7, at100: 7 },
+  { cardId: 'TROUBLE_CAR_REPAIR', at0: 16, at50: 7, at100: 8 },
+  { cardId: 'TROUBLE_HOME_REPAIR', at0: 16, at50: 7, at100: 8 },
+  { cardId: 'TROUBLE_CREDIT_CARD_BILL', at0: 20, at50: 7, at100: 10 },
   { cardId: 'SPECIAL_LODGER', at0: 8.5, at50: 8, at100: 3 },
 ] as const
 
