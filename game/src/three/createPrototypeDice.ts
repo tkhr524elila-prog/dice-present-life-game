@@ -92,21 +92,42 @@ export const createPrototypeDice = (): PrototypeDice => {
   const group = new THREE.Group()
   group.name = 'PrototypeDice'
   group.position.set(0, 0.78, 4.2)
+  const visual = new THREE.Group()
+  visual.name = 'PrototypeDiceVisual'
+  group.add(visual)
 
   const diceGeometry = new THREE.BoxGeometry(1.4, 1.4, 1.4)
   const faceTextures = FACE_VALUES.map((value) => createFaceTexture(value))
   const faceMaterials = faceTextures.map(
-    (texture) => new THREE.MeshStandardMaterial({ map: texture }),
+    (texture) => new THREE.MeshStandardMaterial({
+      map: texture,
+      emissive: 0xfff4c2,
+      emissiveIntensity: 0,
+      roughness: 0.48,
+    }),
   )
   const dice = new THREE.Mesh(diceGeometry, faceMaterials)
   dice.castShadow = true
   dice.receiveShadow = true
-  group.add(dice)
+  visual.add(dice)
 
   const edgeGeometry = new THREE.EdgesGeometry(diceGeometry)
   const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x8d93a3 })
   const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial)
-  group.add(edges)
+  visual.add(edges)
+
+  const glowGeometry = new THREE.RingGeometry(0.82, 1.12, 32)
+  const glowMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffe782,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  })
+  const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+  glow.rotation.x = -Math.PI / 2
+  glow.position.y = -0.72
+  group.add(glow)
 
   let rollState: RollState | undefined
 
@@ -124,6 +145,10 @@ export const createPrototypeDice = (): PrototypeDice => {
         target: getTargetQuaternion(value),
         resolve,
       }
+      glowMaterial.opacity = 0.5
+      faceMaterials.forEach((faceMaterial) => {
+        faceMaterial.emissiveIntensity = 0.35
+      })
     })
   }
 
@@ -138,24 +163,42 @@ export const createPrototypeDice = (): PrototypeDice => {
     if (progress < 0.68) {
       const deltaSeconds = (time - rollState.lastTime) / 1_000
       const speed = 13 - progress * 7
-      group.rotateX(deltaSeconds * speed)
-      group.rotateY(deltaSeconds * speed * 0.82)
-      group.rotateZ(deltaSeconds * speed * 0.58)
+      visual.rotateX(deltaSeconds * speed)
+      visual.rotateY(deltaSeconds * speed * 0.82)
+      visual.rotateZ(deltaSeconds * speed * 0.58)
     } else {
-      rollState.settleStart ??= group.quaternion.clone()
+      rollState.settleStart ??= visual.quaternion.clone()
       const settleProgress = (progress - 0.68) / 0.32
-      group.quaternion.slerpQuaternions(
+      visual.quaternion.slerpQuaternions(
         rollState.settleStart,
         rollState.target,
         easeOutCubic(settleProgress),
       )
     }
 
+    const lift = Math.sin(Math.min(progress / 0.72, 1) * Math.PI) * 0.72
+    const landingBounce = progress > 0.72
+      ? Math.abs(Math.sin((progress - 0.72) * Math.PI * 7)) * (1 - progress) * 0.55
+      : 0
+    visual.position.y = lift + landingBounce
+    visual.position.x = Math.sin(progress * Math.PI * 2.2) * (1 - progress) * 0.34
+    visual.position.z = Math.sin(progress * Math.PI * 1.3) * (1 - progress) * 0.42
+    const anticipation = progress < 0.14 ? 1 + Math.sin((progress / 0.14) * Math.PI) * 0.08 : 1
+    visual.scale.setScalar(anticipation)
+    glowMaterial.opacity = Math.max(0, (1 - progress) * 0.5)
+    glow.rotation.z += 0.018
+
     rollState.lastTime = time
 
     if (progress === 1) {
       const completedRoll = rollState
-      group.quaternion.copy(completedRoll.target)
+      visual.quaternion.copy(completedRoll.target)
+      visual.position.set(0, 0, 0)
+      visual.scale.set(1, 1, 1)
+      glowMaterial.opacity = 0
+      faceMaterials.forEach((faceMaterial) => {
+        faceMaterial.emissiveIntensity = 0
+      })
       rollState = undefined
       completedRoll.resolve(completedRoll.value)
     }
@@ -170,6 +213,8 @@ export const createPrototypeDice = (): PrototypeDice => {
       diceGeometry.dispose()
       edgeGeometry.dispose()
       edgeMaterial.dispose()
+      glowGeometry.dispose()
+      glowMaterial.dispose()
       faceTextures.forEach((texture) => texture.dispose())
       faceMaterials.forEach((material) => material.dispose())
       group.clear()

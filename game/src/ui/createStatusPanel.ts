@@ -32,6 +32,7 @@ export const createStatusPanel = (
 
   const valueElements = new Map<StatusKey, HTMLElement>()
   const itemElements = new Map<StatusKey, HTMLElement>()
+  const gaugeElements = new Map<StatusKey, HTMLElement>()
   const animationTimers = new Set<number>()
 
   ;(['points', 'health', 'love'] as const).forEach((key) => {
@@ -44,6 +45,16 @@ export const createStatusPanel = (
       <span class="status-label">${details.label}</span>
       <strong class="status-value">0</strong>
     `
+    if (key !== 'points') {
+      const gauge = document.createElement('span')
+      gauge.className = 'status-gauge'
+      gauge.setAttribute('role', 'meter')
+      gauge.setAttribute('aria-valuemin', '0')
+      gauge.setAttribute('aria-valuemax', '100')
+      gauge.innerHTML = '<span class="status-gauge-fill"></span>'
+      item.appendChild(gauge)
+      gaugeElements.set(key, gauge)
+    }
     element.appendChild(item)
     itemElements.set(key, item)
     valueElements.set(key, item.querySelector<HTMLElement>('.status-value')!)
@@ -74,6 +85,12 @@ export const createStatusPanel = (
   const render = ({ state, statusChanges }: GameStateChange) => {
     ;(['points', 'health', 'love'] as const).forEach((key) => {
       valueElements.get(key)!.textContent = formatValue(key, state[key])
+      const gauge = gaugeElements.get(key)
+      if (gauge) {
+        gauge.setAttribute('aria-valuenow', String(state[key]))
+        gauge.querySelector<HTMLElement>('.status-gauge-fill')!
+          .style.width = `${state[key]}%`
+      }
       showChange(key, statusChanges?.[key] ?? 0)
     })
   }

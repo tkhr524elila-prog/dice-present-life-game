@@ -1774,3 +1774,523 @@ button {
     transition-duration: 0ms;
   }
 }
+
+/* Phase 5：演出・UI品質向上 */
+.title-fantasy-decoration,
+.title-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.title-dice {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  color: rgb(255 255 255 / 82%);
+  font-size: clamp(64px, 9vw, 126px);
+  filter: drop-shadow(0 14px 15px rgb(67 55 112 / 24%));
+  animation: title-dice-float 5s ease-in-out infinite;
+}
+
+.title-path {
+  position: absolute;
+  bottom: 5%;
+  width: clamp(52px, 7vw, 92px);
+  aspect-ratio: 1;
+  border: 3px solid rgb(255 255 255 / 66%);
+  border-radius: 18px;
+  background: rgb(255 247 202 / 48%);
+  box-shadow: 0 12px 24px rgb(71 53 112 / 15%);
+  transform: rotate(12deg);
+}
+
+.title-path--1 { left: 5%; bottom: 5%; }
+.title-path--2 { left: 13%; bottom: 12%; transform: rotate(-7deg); }
+.title-path--3 { left: 21%; bottom: 7%; transform: rotate(8deg); }
+.title-path--4 { left: 29%; bottom: 15%; transform: rotate(-12deg); }
+
+.title-particles i,
+.present-draw-particles i {
+  position: absolute;
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff6bd;
+  box-shadow: 0 0 10px #fff2a0;
+}
+
+.title-particles i {
+  left: calc(7% + var(--particle-index) * 7.5%);
+  top: calc(12% + var(--particle-index) * 5.8%);
+  animation: title-particle-drift 5.2s ease-in-out infinite alternate;
+  animation-delay: calc(var(--particle-index) * -0.35s);
+}
+
+.title-panel::before {
+  display: block;
+  width: fit-content;
+  margin: -24px auto 18px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff2a8, #ffd7ec);
+  color: #675182;
+  content: '✦ 人生の旅へようこそ ✦';
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.start-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.start-button::after {
+  position: absolute;
+  top: -80%;
+  left: -40%;
+  width: 28%;
+  height: 260%;
+  background: rgb(255 255 255 / 35%);
+  content: '';
+  transform: rotate(20deg);
+  animation: start-button-shine 3.6s ease-in-out infinite;
+}
+
+.status-item {
+  grid-template-areas:
+    "icon label"
+    "icon value"
+    "gauge gauge";
+}
+
+.status-gauge {
+  grid-area: gauge;
+  height: 5px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d9d6e4;
+}
+
+.status-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #54c9b0, #65a7e9);
+  transition: width 500ms ease;
+}
+
+.status-item[data-status="love"] .status-gauge-fill {
+  background: linear-gradient(90deg, #f19baf, #e96084);
+}
+
+.dice-result--revealed {
+  animation: dice-result-pop 650ms cubic-bezier(0.2, 1.5, 0.4, 1);
+  color: #6a4db2;
+  text-shadow: 0 0 16px rgb(255 212 88 / 72%);
+}
+
+.prototype-event-card--entering {
+  animation: event-card-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.prototype-event-modal--accident:not(.prototype-event-modal--safe) {
+  animation: accident-screen-shake 340ms ease;
+  background: rgb(62 12 21 / 70%);
+}
+
+.prototype-event-modal--accident:not(.prototype-event-modal--safe) .prototype-event-card {
+  border-color: #d44f5f;
+  box-shadow: 0 0 0 5px rgb(211 73 92 / 18%), 0 26px 80px rgb(12 17 38 / 50%);
+}
+
+.prototype-event-modal--safe .prototype-event-card {
+  border-color: #89d6b2;
+  background: linear-gradient(145deg, #f7fff9, #eefaff);
+}
+
+.present-draw-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.present-draw-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.present-draw-particles i {
+  left: 50%;
+  top: 48%;
+  opacity: 0;
+}
+
+.present-draw-panel--revealing .present-draw-particles i {
+  animation: present-particle-burst 850ms ease-out both;
+  animation-delay: calc(var(--particle-index) * 24ms);
+}
+
+.present-result-card {
+  transform-style: preserve-3d;
+}
+
+.life-card-inventory-location {
+  margin: 7px 0 0;
+  color: #7d7390;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.life-choice-option {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.life-choice-option:focus-within,
+.life-choice-option:hover {
+  border-color: #9f89dc;
+  box-shadow: 0 16px 30px rgb(74 57 120 / 18%);
+  transform: translateY(-3px);
+}
+
+.life-choice-change {
+  font-size: 13px;
+}
+
+.contract-stamp--pressed {
+  filter: blur(0.25px) contrast(1.15);
+  box-shadow: inset 0 0 5px rgb(177 31 40 / 28%);
+}
+
+.contract-filed {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  margin: 0;
+  color: #6f5c39;
+  font-size: 13px;
+  font-weight: 900;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.contract-filed--visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.contract-document--filed {
+  animation: contract-file-away 520ms ease both;
+}
+
+.chapter-banner {
+  background: rgb(10 13 31 / 30%);
+}
+
+.chapter-banner-panel {
+  position: relative;
+  overflow: hidden;
+  border-width: 2px;
+}
+
+.chapter-banner-ornament {
+  margin-bottom: 6px;
+  color: #ffe28c;
+  font-size: 26px;
+  animation: chapter-ornament-spin 2s ease both;
+}
+
+.chapter-banner[data-chapter="1"] .chapter-banner-panel { border-color: #66d177; }
+.chapter-banner[data-chapter="2"] .chapter-banner-panel { border-color: #4d9fe0; }
+.chapter-banner[data-chapter="3"] .chapter-banner-panel { border-color: #c07be7; }
+.chapter-banner[data-chapter="4"] .chapter-banner-panel { border-color: #ee9948; }
+.chapter-banner[data-chapter="5"] .chapter-banner-panel { border-color: #e3ce6b; }
+
+.life-history-list {
+  position: relative;
+  padding-left: 23px;
+}
+
+.life-history-list::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  width: 3px;
+  border-radius: 99px;
+  background: linear-gradient(#72c77f, #638dd0, #9a6cc4, #e59652, #d5bc55);
+  content: '';
+}
+
+.life-history-item {
+  position: relative;
+}
+
+.life-history-item::before {
+  position: absolute;
+  top: 23px;
+  left: -25px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--chapter-color);
+  box-shadow: 0 0 0 2px var(--chapter-color);
+  content: '';
+}
+
+.life-history-item--settlement {
+  background: #fff8d9;
+}
+
+.settlement-panel {
+  background:
+    radial-gradient(circle at 10% 0%, rgb(255 224 111 / 20%), transparent 30%),
+    linear-gradient(145deg, #fffdf7, #f4efff);
+}
+
+.settlement-stage--result::before {
+  display: block;
+  margin-bottom: 8px;
+  color: #d0a225;
+  content: '✦ 祝 ✦';
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+}
+
+.settlement-stage--result .settlement-prize-list span {
+  box-shadow: 0 5px 16px rgb(194 145 28 / 18%);
+  animation: result-prize-float 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes title-dice-float {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-18px) rotate(8deg); }
+}
+
+@keyframes title-particle-drift {
+  to { transform: translate(12px, -20px) scale(1.4); opacity: 0.4; }
+}
+
+@keyframes start-button-shine {
+  0%, 58% { left: -40%; }
+  82%, 100% { left: 125%; }
+}
+
+@keyframes dice-result-pop {
+  0% { opacity: 0.2; transform: scale(0.65); }
+  55% { transform: scale(1.28); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes event-card-enter {
+  from { opacity: 0; transform: translateY(20px) rotateX(-5deg) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) rotateX(0) scale(1); }
+}
+
+@keyframes accident-screen-shake {
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes present-particle-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  20% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform:
+      rotate(calc(var(--particle-index) * 27deg))
+      translateX(calc(80px + var(--particle-index) * 5px))
+      scale(1.5);
+  }
+}
+
+@keyframes contract-file-away {
+  0%, 45% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(18px) scale(0.94); opacity: 0.62; }
+}
+
+@keyframes chapter-ornament-spin {
+  from { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+  30%, 75% { opacity: 1; transform: rotate(0) scale(1); }
+  to { opacity: 0; transform: rotate(90deg) scale(0.7); }
+}
+
+@keyframes result-prize-float {
+  to { transform: translateY(-4px); filter: brightness(1.05); }
+}
+
+@media (max-width: 1024px), (max-height: 650px) {
+  .development-label {
+    top: 8px;
+    left: 8px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .status-panel {
+    top: 8px;
+    right: 8px;
+    grid-template-columns: repeat(3, minmax(88px, 1fr));
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .status-item {
+    padding: 5px 7px;
+  }
+
+  .status-icon { font-size: 17px; }
+  .status-value { font-size: 16px; }
+
+  .life-card-inventory-button,
+  .life-history-button {
+    right: 8px;
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+
+  .life-card-inventory-button { top: 80px; }
+  .life-history-button { top: 121px; }
+
+  .dice-controls {
+    right: 8px;
+    bottom: 8px;
+    width: 230px;
+    gap: 5px;
+    padding: 9px;
+  }
+
+  .current-position { font-size: 13px; }
+  .current-square-type,
+  .current-chapter { font-size: 10px; }
+  .dice-result { font-size: 18px; }
+  .dice-roll-button { min-width: 180px; padding: 10px 14px; }
+  .board-legend { display: none; }
+
+  .prototype-event-modal,
+  .present-draw-modal,
+  .life-choice-modal,
+  .contract-modal,
+  .life-card-inventory-modal,
+  .life-history-modal,
+  .settlement-modal {
+    padding: 10px;
+  }
+
+  .prototype-event-card {
+    width: min(600px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    padding: 18px 24px 16px;
+    overflow-y: auto;
+  }
+
+  .prototype-event-card h2 { font-size: 27px; }
+  .prototype-event-text { margin: 10px 0 13px; font-size: 14px; }
+  .prototype-event-change { padding: 8px; }
+  .prototype-event-note { margin: 9px 0 12px; }
+
+  .present-draw-panel {
+    width: min(590px, calc(100vw - 20px));
+    min-height: 0;
+    max-height: calc(100vh - 20px);
+    padding: 16px 24px;
+    overflow-y: auto;
+  }
+
+  .present-draw-box { width: 110px; height: 110px; margin: 22px auto 12px; }
+  .present-draw-box-body { width: 100px; height: 86px; margin-top: 20px; font-size: 48px; }
+  .present-draw-box-lid { width: 110px; height: 28px; }
+  .present-result-card { min-height: 0; margin: 12px auto; padding: 14px 20px; }
+  .present-result-icon { font-size: 44px; }
+  .present-result-name { font-size: 24px; }
+
+  .life-choice-panel {
+    width: min(850px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    padding: 15px 20px 13px;
+  }
+
+  .life-choice-panel h2 { font-size: 25px; }
+  .life-choice-description { margin: 5px 0 10px; font-size: 13px; }
+  .life-choice-option { padding: 11px 13px; }
+  .life-choice-option h3 { font-size: 17px; }
+  .life-choice-option-description { min-height: 0; margin: 5px 0 8px; line-height: 1.35; }
+  .life-choice-comparisons { margin-bottom: 9px; }
+  .life-choice-comparisons ul { min-height: 0; padding-top: 6px; padding-bottom: 6px; line-height: 1.35; }
+  .life-choice-select { min-width: 160px; padding: 9px 14px; }
+
+  .contract-panel {
+    width: min(620px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    padding: 13px 20px 16px;
+    overflow-y: auto;
+  }
+
+  .contract-document { min-height: 270px; margin: 6px 0 12px; padding: 16px 22px; }
+  .contract-document h2 { font-size: 22px; }
+  .contract-summary { margin: 10px 0; font-size: 15px; }
+  .contract-details { gap: 5px; font-size: 12px; }
+  .contract-stamp { width: 58px; height: 58px; font-size: 14px; }
+
+  .life-card-inventory-panel,
+  .life-history-panel,
+  .settlement-panel {
+    width: min(850px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+  }
+
+  .settlement-panel { min-height: 0; }
+  .settlement-progress { padding: 7px 16px; }
+  .settlement-content { padding: 12px 22px 10px; }
+  .settlement-stage h2 { font-size: 27px; }
+  .settlement-goal-mark { width: 100px; height: 100px; margin: 10px auto; font-size: 24px; }
+  .settlement-value-grid { margin-top: 10px; gap: 6px; }
+  .settlement-value-grid div { padding: 7px 10px; }
+  .settlement-value-grid dd { font-size: 14px; }
+  .settlement-nisa-result,
+  .settlement-health { margin: 15px 0; font-size: 42px; }
+  .settlement-final-cash { font-size: 48px; }
+  .settlement-next { margin-bottom: 13px; padding: 10px 24px; }
+}
+
+@media (max-width: 760px) and (orientation: landscape) {
+  .title-panel {
+    width: min(650px, calc(100vw - 28px));
+    padding: 22px 28px 18px;
+  }
+
+  .title-panel::before { margin: -8px auto 9px; }
+  .game-title { font-size: clamp(24px, 5vw, 34px); }
+  .game-description { margin: 10px 0 14px; font-size: 14px; line-height: 1.5; }
+  .start-button { min-width: 210px; padding: 12px 24px; font-size: 16px; }
+  .title-dice { font-size: 60px; }
+
+  .status-panel {
+    grid-template-columns: repeat(3, 78px);
+  }
+
+  .status-label { font-size: 9px; }
+  .status-value { font-size: 14px; }
+
+  .dice-controls {
+    width: 200px;
+  }
+
+  .life-choice-options { gap: 8px; }
+  .life-choice-option-changes { gap: 3px; }
+  .life-choice-change { font-size: 10px; }
+  .life-choice-comparisons ul { font-size: 10px; }
+
+  .life-history-panel-header { padding-bottom: 8px; }
+  .life-history-panel h2,
+  .life-card-inventory-panel h2 { font-size: 24px; }
+}

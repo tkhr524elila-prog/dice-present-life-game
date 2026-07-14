@@ -7,10 +7,12 @@ import {
 import { createBoard } from './createBoard'
 import { createPrototypeDice, type DiceValue } from './createPrototypeDice'
 import { createPrototypePlayer } from './createPrototypePlayer'
+import { createChapterScenery } from './createChapterScenery'
 
 type SceneController = {
   rollDice: () => Promise<DiceValue>
   movePlayerTo: (squareNumber: number) => Promise<void>
+  setUiFocus: (isFocused: boolean) => void
   dispose: () => void
 }
 
@@ -27,8 +29,16 @@ export const createScene = (container: HTMLElement): SceneController => {
   const cameraLookAt = new THREE.Vector3()
   const cameraLookAtGoal = new THREE.Vector3()
   const cameraPositionGoal = new THREE.Vector3()
+  const squarePositionScratch = new THREE.Vector3()
+  const nextSquarePositionScratch = new THREE.Vector3()
+  const lookAheadScratch = new THREE.Vector3()
+  const cameraOffsetScratch = new THREE.Vector3()
+  const diceOffset = new THREE.Vector3(4.4, 1.05, 0)
   let cameraDistanceScale = 1
+  let cameraPullback = 1
+  let isUiFocused = false
   let currentSquareNumber = 1
+  let currentChapterNumber = 1
 
   const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -52,6 +62,9 @@ export const createScene = (container: HTMLElement): SceneController => {
 
   const board = createBoard()
   scene.add(board.group)
+
+  const chapterScenery = createChapterScenery()
+  scene.add(chapterScenery.group)
 
   const prototypePlayer = createPrototypePlayer(board.startPosition)
   scene.add(prototypePlayer.group)
@@ -95,19 +108,20 @@ export const createScene = (container: HTMLElement): SceneController => {
     if (!square) return
 
     currentSquareNumber = squareNumber
-    const squarePosition = new THREE.Vector3(...square.position)
-    cameraLookAtGoal.copy(squarePosition).add(new THREE.Vector3(0, 0.45, 3))
-    cameraPositionGoal.copy(squarePosition).add(
-      new THREE.Vector3(
-        6.5 * cameraDistanceScale,
-        8.5 * cameraDistanceScale,
-        -10 * cameraDistanceScale,
-      ),
-    )
+    const squarePosition = squarePositionScratch.set(...square.position)
+    const nextSquare = getBoardSquare(Math.min(60, squareNumber + 2))
+    const lookAhead = nextSquare
+      ? nextSquarePositionScratch.set(...nextSquare.position).sub(squarePosition).multiplyScalar(0.38)
+      : lookAheadScratch.set(0, 0, 2.5)
+    cameraLookAtGoal.copy(squarePosition).add(lookAhead)
+    cameraLookAtGoal.y += 0.35
+    const viewScale = cameraDistanceScale * cameraPullback
+    cameraOffsetScratch.set(6.2 * viewScale, 8.2 * viewScale, -9.2 * viewScale)
+    cameraPositionGoal.copy(squarePosition).add(cameraOffsetScratch)
 
     prototypeDice.group.position
       .copy(squarePosition)
-      .add(new THREE.Vector3(4.4, 1.05, 0))
+      .add(diceOffset)
 
     if (immediate) {
       camera.position.copy(cameraPositionGoal)
@@ -138,11 +152,14 @@ export const createScene = (container: HTMLElement): SceneController => {
   renderer.setAnimationLoop((time) => {
     const deltaSeconds = Math.min(Math.max((time - previousTime) / 1_000, 0), 0.1)
     previousTime = time
-    const interpolation = 1 - Math.exp(-deltaSeconds * 3.2)
+    cameraPullback += (1 - cameraPullback) * (1 - Math.exp(-deltaSeconds * 0.9))
+    updateViewForSquare(currentSquareNumber)
+    const interpolation = 1 - Math.exp(-deltaSeconds * (isUiFocused ? 1.8 : 3.4))
 
     prototypeDice.update(time)
     prototypePlayer.update(time)
     board.update(time)
+    chapterScenery.update(time)
     camera.position.lerp(cameraPositionGoal, interpolation)
     cameraLookAt.lerp(cameraLookAtGoal, interpolation)
     camera.lookAt(cameraLookAt)
@@ -164,10 +181,19 @@ export const createScene = (container: HTMLElement): SceneController => {
       const square = getBoardSquare(squareNumber)
       if (!targetPosition || !square) return Promise.resolve()
 
+      if (square.chapter !== currentChapterNumber) {
+        currentChapterNumber = square.chapter
+        cameraPullback = 1.28
+        chapterScenery.setChapter(square.chapter)
+      }
+      board.setCurrentSquare(squareNumber)
       updateViewForSquare(squareNumber)
       return prototypePlayer.moveTo(targetPosition).then(() => {
         setEnvironmentForSquare(square)
       })
+    },
+    setUiFocus: (isFocused) => {
+      isUiFocused = isFocused
     },
     dispose: () => {
       window.removeEventListener('resize', resize)
@@ -175,9 +201,11 @@ export const createScene = (container: HTMLElement): SceneController => {
       scene.remove(prototypeDice.group)
       scene.remove(prototypePlayer.group)
       scene.remove(board.group)
+      scene.remove(chapterScenery.group)
       prototypeDice.dispose()
       prototypePlayer.dispose()
       board.dispose()
+      chapterScenery.dispose()
       groundGeometry.dispose()
       groundMaterial.dispose()
       renderer.dispose()

@@ -59,7 +59,7 @@ const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">Phase 4：ゴール精算確認</p>
+    <p class="development-label">Phase 5：演出・UI品質確認</p>
   `
 
   app.appendChild(sceneContainer)
@@ -86,6 +86,9 @@ const showThreeScene = () => {
     diceControls.setPhase(phase)
     updateInventoryPhase?.(phase)
     updateHistoryPhase?.(phase)
+    sceneController.setUiFocus(
+      phase !== 'ready' && phase !== 'rolling' && phase !== 'moving',
+    )
   }
   const lifeCardInventory = createLifeCardInventory(
     gameState,

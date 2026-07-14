@@ -93,7 +93,7 @@ export const createSettlementModal = (): SettlementModal => {
 
     const stages = [
       () => {
-        const stage = createStage('29歳・ゴール到着', '人生の精算', '歩いてきた人生を、ひとつずつ振り返ります。')
+        const stage = createStage('29歳のゴール', '人生の精算へ', '歩いてきた人生を、ひとつずつ振り返ります。')
         stage.classList.add('settlement-stage--goal')
         const goal = document.createElement('div')
         goal.className = 'settlement-goal-mark'
@@ -122,7 +122,13 @@ export const createSettlementModal = (): SettlementModal => {
       () => {
         const stage = createStage('特殊カード精算', '居候カード')
         if (result.lodgerCount === 0) {
-          stage.appendChild(document.createTextNode('居候はいませんでした'))
+          const message = document.createElement('p')
+          message.textContent = '居候はいませんでした'
+          stage.append(message, createValueGrid([
+            ['処理前', `${formatNumber(result.startingPoints)}ポイント`],
+            ['変動', '変化なし'],
+            ['処理後', `${formatNumber(result.startingPoints)}ポイント`],
+          ]))
         } else {
           const count = document.createElement('p')
           count.className = 'settlement-card-title'
@@ -131,9 +137,11 @@ export const createSettlementModal = (): SettlementModal => {
           description.className = 'settlement-fixed-copy'
           description.textContent = LODGER_CARD_EFFECT.description
           stage.append(count, description, createValueGrid([
-            ['ポイント', formatChange(result.lodgerPointsChange, '')],
-            ['健康', formatChange(result.lodgerHealthChange, '')],
-            ['愛情', formatChange(result.lodgerLoveChange, '')],
+            ['処理前ポイント', `${formatNumber(result.startingPoints)}ポイント`],
+            ['ポイント変動', formatChange(result.lodgerPointsChange, '')],
+            ['処理後ポイント', `${formatNumber(result.startingPoints + result.lodgerPointsChange)}ポイント`],
+            ['健康', `${result.startingHealth} → ${result.finalHealth}`],
+            ['愛情', `${result.startingLove} → ${result.finalLove}`],
           ]))
         }
         return stage
@@ -141,7 +149,14 @@ export const createSettlementModal = (): SettlementModal => {
       () => {
         const stage = createStage('カード精算', 'トラブルカード')
         if (result.troubleCards.length === 0) {
-          stage.appendChild(document.createTextNode('精算するトラブルカードはありませんでした'))
+          const message = document.createElement('p')
+          message.textContent = '精算するトラブルカードはありませんでした'
+          const pointsAfterLodger = result.startingPoints + result.lodgerPointsChange
+          stage.append(message, createValueGrid([
+            ['処理前', `${formatNumber(pointsAfterLodger)}ポイント`],
+            ['変動', '変化なし'],
+            ['処理後', `${formatNumber(pointsAfterLodger)}ポイント`],
+          ]))
         } else {
           const list = document.createElement('div')
           list.className = 'settlement-card-list settlement-card-list--trouble'
@@ -155,23 +170,42 @@ export const createSettlementModal = (): SettlementModal => {
           const total = document.createElement('p')
           total.className = 'settlement-total settlement-total--negative'
           total.textContent = `合計 ${formatChange(result.troubleTotal)}`
-          stage.append(list, total)
+          stage.append(list, total, createValueGrid([
+            ['処理前', `${formatNumber(result.startingPoints + result.lodgerPointsChange)}ポイント`],
+            ['変動', formatChange(result.troubleTotal)],
+            ['処理後', `${formatNumber(result.startingPoints + result.lodgerPointsChange + result.troubleTotal)}ポイント`],
+          ]))
         }
         return stage
       },
       () => {
         const stage = createStage('契約精算', 'NISA運用結果')
         if (result.nisaResult === null) {
-          stage.appendChild(document.createTextNode('NISAは始めませんでした'))
+          const message = document.createElement('p')
+          message.textContent = 'NISAは始めませんでした'
+          const pointsBeforeNisa = result.startingPoints + result.lodgerPointsChange + result.troubleTotal
+          stage.append(message, createValueGrid([
+            ['処理前', `${formatNumber(pointsBeforeNisa)}ポイント`],
+            ['変動', '変化なし'],
+            ['処理後', `${formatNumber(pointsBeforeNisa)}ポイント`],
+          ]))
         } else {
           const roulette = document.createElement('div')
           roulette.className = 'settlement-nisa-result settlement-nisa-result--rolling'
           roulette.textContent = '運用結果を計算中…'
-          stage.appendChild(roulette)
+          const nisaDetails = createValueGrid([
+            ['処理前', `${formatNumber(result.startingPoints + result.lodgerPointsChange + result.troubleTotal)}ポイント`],
+            ['運用結果', '抽選中…'],
+            ['処理後', '計算中…'],
+          ])
+          stage.append(roulette, nisaDetails)
           nextButton.disabled = true
           const timer = window.setTimeout(() => {
             roulette.classList.remove('settlement-nisa-result--rolling')
             roulette.textContent = formatChange(result.nisaResult!)
+            const details = nisaDetails.querySelectorAll('dd')
+            details[1]!.textContent = formatChange(result.nisaResult!)
+            details[2]!.textContent = `${formatNumber(result.startingPoints + result.lodgerPointsChange + result.troubleTotal + result.nisaResult!)}ポイント`
             nextButton.disabled = false
             timers.delete(timer)
           }, 1_000)
@@ -193,16 +227,28 @@ export const createSettlementModal = (): SettlementModal => {
       () => {
         const stage = createStage('契約精算', '医療保険')
         if (!overview.hasMedicalInsurance) {
-          stage.appendChild(document.createTextNode('医療保険へ加入していませんでした'))
+          const message = document.createElement('p')
+          message.textContent = '医療保険へ加入していませんでした'
+          stage.append(message, createValueGrid([
+            ['処理前', `${formatNumber(result.pointsBeforeHealthMultiplier)}ポイント`],
+            ['変動', '変化なし'],
+            ['処理後', `${formatNumber(result.pointsBeforeHealthMultiplier)}ポイント`],
+          ]))
         } else if (result.medicalInsuranceBenefit === 0) {
           const message = document.createElement('p')
           message.className = 'settlement-fixed-copy'
           message.textContent = '給付金はありませんでした。\nでも、健康で終われたことが一番です。'
-          stage.appendChild(message)
+          stage.append(message, createValueGrid([
+            ['処理前', `${formatNumber(result.pointsBeforeHealthMultiplier)}ポイント`],
+            ['給付金', '変化なし'],
+            ['処理後', `${formatNumber(result.pointsBeforeHealthMultiplier)}ポイント`],
+          ]))
         } else {
           stage.appendChild(createValueGrid([
             ['最終健康', String(result.finalHealth)],
+            ['処理前', `${formatNumber(result.pointsBeforeHealthMultiplier - result.medicalInsuranceBenefit)}ポイント`],
             ['給付金', formatChange(result.medicalInsuranceBenefit)],
+            ['処理後', `${formatNumber(result.pointsBeforeHealthMultiplier)}ポイント`],
           ]))
         }
         return stage

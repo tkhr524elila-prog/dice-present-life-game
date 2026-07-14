@@ -21,6 +21,7 @@ export const createPresentDrawModal = (): PresentDrawModal => {
   element.setAttribute('aria-labelledby', 'present-draw-title')
   element.innerHTML = `
     <section class="present-draw-panel">
+      <div class="present-draw-particles" aria-hidden="true"></div>
       <p class="present-draw-heading">プレゼント抽選</p>
       <h2 id="present-draw-title">ライフカードを抽選中</h2>
       <div class="present-draw-box" aria-hidden="true">
@@ -40,6 +41,15 @@ export const createPresentDrawModal = (): PresentDrawModal => {
   `
 
   const title = element.querySelector<HTMLElement>('#present-draw-title')!
+  const panel = element.querySelector<HTMLElement>('.present-draw-panel')!
+  const particles = element.querySelector<HTMLElement>('.present-draw-particles')!
+  particles.replaceChildren(
+    ...Array.from({ length: 14 }, (_, index) => {
+      const particle = document.createElement('i')
+      particle.style.setProperty('--particle-index', String(index))
+      return particle
+    }),
+  )
   const box = element.querySelector<HTMLElement>('.present-draw-box')!
   const waitMessage = element.querySelector<HTMLElement>('.present-draw-wait')!
   const resultCard = element.querySelector<HTMLElement>('.present-result-card')!
@@ -89,6 +99,7 @@ export const createPresentDrawModal = (): PresentDrawModal => {
     receiveButton.disabled = true
     guarantee.hidden = !isGuaranteed
     hasRevealed = false
+    panel.classList.remove('present-draw-panel--revealing')
     element.hidden = false
 
     pendingPromise = new Promise<void>((resolve) => {
@@ -100,6 +111,7 @@ export const createPresentDrawModal = (): PresentDrawModal => {
       box.hidden = true
       waitMessage.hidden = true
       title.textContent = 'ライフカード獲得！'
+      panel.classList.add('present-draw-panel--revealing')
       resultCard.className = `present-result-card present-result-card--${card.type}`
       resultIcon.textContent = card.icon
       resultType.textContent = card.typeLabel

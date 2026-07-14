@@ -23,6 +23,7 @@ type Board = {
   group: THREE.Group
   startPosition: THREE.Vector3
   squarePositions: readonly THREE.Vector3[]
+  setCurrentSquare: (squareNumber: number) => void
   update: (time: number) => void
   dispose: () => void
 }
@@ -104,9 +105,10 @@ const drawOutlinedText = (
 
 const createSquareFaceTexture = (square: BoardSquareData) => {
   const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 512
+  canvas.width = 768
+  canvas.height = 768
   const context = canvas.getContext('2d')!
+  context.scale(1.5, 1.5)
   const textColor = getTextColor(square)
 
   const surfaceGradient = context.createLinearGradient(0, 0, 0, 512)
@@ -198,6 +200,7 @@ export const createBoard = (): Board => {
   const topMaterials: THREE.MeshStandardMaterial[] = []
   const auraMaterials: THREE.MeshBasicMaterial[] = []
   const animatedSquares: AnimatedSquare[] = []
+  let currentSquareNumber = 1
 
   const getMaterial = (
     cache: Map<string, THREE.MeshStandardMaterial>,
@@ -304,6 +307,44 @@ export const createBoard = (): Board => {
     })
   })
 
+  const currentMarkerMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.72,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  })
+  const currentMarker = new THREE.Mesh(
+    new THREE.RingGeometry(0.92, 1.12, 40),
+    currentMarkerMaterial,
+  )
+  currentMarker.name = 'CurrentSquareMarker'
+  currentMarker.rotation.x = -Math.PI / 2
+  currentMarker.position.copy(rawPositions[0]!)
+  currentMarker.position.y += CENTER_RAISE + CENTER_HEIGHT * 0.66
+  group.add(currentMarker)
+
+  const sparklePositions = new Float32Array(18 * 3)
+  for (let index = 0; index < 18; index += 1) {
+    const angle = (index / 18) * Math.PI * 2
+    sparklePositions[index * 3] = Math.cos(angle) * (1.25 + (index % 3) * 0.2)
+    sparklePositions[index * 3 + 1] = 0.35 + (index % 5) * 0.32
+    sparklePositions[index * 3 + 2] = Math.sin(angle) * (1.25 + (index % 3) * 0.2)
+  }
+  const sparkleGeometry = new THREE.BufferGeometry()
+  sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3))
+  const sparkleMaterial = new THREE.PointsMaterial({
+    color: 0xffdf70,
+    size: 0.17,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  })
+  const goalSparkles = new THREE.Points(sparkleGeometry, sparkleMaterial)
+  goalSparkles.position.copy(rawPositions[59]!)
+  goalSparkles.position.y += 0.4
+  group.add(goalSparkles)
+
   const squarePositions = rawPositions.map((position) =>
     position
       .clone()
@@ -324,7 +365,7 @@ export const createBoard = (): Board => {
         const slowWave = (Math.sin(seconds * 1.35 + square.id * 0.47) + 1) / 2
 
         center.position.y = baseY
-        topMaterial.emissiveIntensity = 0.04
+        topMaterial.emissiveIntensity = square.id < currentSquareNumber ? 0.025 : 0.04
         if (auraMaterial) auraMaterial.opacity = 0.06
 
         if (square.type === 'gift') {
@@ -346,20 +387,44 @@ export const createBoard = (): Board => {
         } else if (square.effectTone === 'mixed') {
           topMaterial.emissiveIntensity = 0.06 + slowWave * 0.1
         }
+
+        if (square.id === currentSquareNumber) {
+          topMaterial.emissiveIntensity += 0.28 + slowWave * 0.2
+        } else if (square.id > currentSquareNumber && square.id <= currentSquareNumber + 3) {
+          topMaterial.emissiveIntensity += 0.06
+        }
       },
     )
+    currentMarkerMaterial.opacity = 0.5 + Math.sin(seconds * 2.1) * 0.18
+    currentMarker.scale.setScalar(1 + Math.sin(seconds * 1.8) * 0.035)
+    goalSparkles.rotation.y = seconds * 0.28
+    sparkleMaterial.opacity = currentSquareNumber === 60
+      ? 0.55 + Math.sin(seconds * 2.4) * 0.25
+      : 0
   }
 
   return {
     group,
     startPosition: squarePositions[0].clone(),
     squarePositions,
+    setCurrentSquare: (squareNumber) => {
+      currentSquareNumber = Math.min(60, Math.max(1, squareNumber))
+      const position = rawPositions[currentSquareNumber - 1]
+      if (!position) return
+      currentMarker.position.copy(position)
+      currentMarker.position.y += CENTER_RAISE + CENTER_HEIGHT * 0.66
+      currentMarkerMaterial.color.set(currentSquareNumber === 60 ? 0xffdc69 : 0xffffff)
+    },
     update,
     dispose: () => {
       frameGeometry.dispose()
       centerGeometry.dispose()
       connectorGeometry.dispose()
       auraGeometry.dispose()
+      currentMarker.geometry.dispose()
+      currentMarkerMaterial.dispose()
+      sparkleGeometry.dispose()
+      sparkleMaterial.dispose()
       connectorMaterial.dispose()
       frameMaterials.forEach((material) => material.dispose())
       sideMaterials.forEach((material) => material.dispose())

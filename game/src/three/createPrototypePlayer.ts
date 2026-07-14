@@ -11,12 +11,19 @@ type MovementState = {
   start: THREE.Vector3
   target: THREE.Vector3
   startTime?: number
+  startRotation: number
+  targetRotation: number
   resolve: () => void
 }
 
 const MOVE_DURATION = 450
 const smoothStep = (progress: number) =>
   progress * progress * (3 - 2 * progress)
+
+const lerpAngle = (start: number, end: number, progress: number) => {
+  const difference = Math.atan2(Math.sin(end - start), Math.cos(end - start))
+  return start + difference * progress
+}
 
 export const createPrototypePlayer = (
   startPosition: THREE.Vector3,
@@ -63,12 +70,14 @@ export const createPrototypePlayer = (
     }
 
     const direction = targetPosition.clone().sub(group.position)
-    group.rotation.y = -Math.atan2(direction.z, direction.x)
+    const targetRotation = -Math.atan2(direction.z, direction.x)
 
     return new Promise<void>((resolve) => {
       movementState = {
         start: group.position.clone(),
         target: targetPosition.clone(),
+        startRotation: group.rotation.y,
+        targetRotation,
         resolve,
       }
     })
@@ -82,15 +91,35 @@ export const createPrototypePlayer = (
       (time - movementState.startTime) / MOVE_DURATION,
       1,
     )
+    const easedProgress = smoothStep(progress)
     group.position.lerpVectors(
       movementState.start,
       movementState.target,
-      smoothStep(progress),
+      easedProgress,
     )
+    group.rotation.y = lerpAngle(
+      movementState.startRotation,
+      movementState.targetRotation,
+      smoothStep(Math.min(progress * 1.45, 1)),
+    )
+
+    const walkingHop = Math.sin(progress * Math.PI * 3) * 0.055
+    const travelArc = Math.sin(progress * Math.PI) * 0.12
+    group.position.y += Math.max(0, walkingHop) + travelArc
+    group.rotation.z = Math.sin(progress * Math.PI * 4) * 0.025
+
+    if (progress > 0.82) {
+      const landingProgress = (progress - 0.82) / 0.18
+      group.scale.y = 1 - Math.sin(landingProgress * Math.PI) * 0.08
+      group.scale.x = group.scale.z = 1 + Math.sin(landingProgress * Math.PI) * 0.04
+    }
 
     if (progress === 1) {
       const completedMovement = movementState
       group.position.copy(completedMovement.target)
+      group.rotation.y = completedMovement.targetRotation
+      group.rotation.z = 0
+      group.scale.set(1, 1, 1)
       movementState = undefined
       completedMovement.resolve()
     }

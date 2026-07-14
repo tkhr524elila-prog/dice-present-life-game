@@ -71,6 +71,9 @@ export const createDiceControls = (
     },
     setResult: (value) => {
       result.textContent = `出目：${value}`
+      result.classList.remove('dice-result--revealed')
+      void result.offsetWidth
+      result.classList.add('dice-result--revealed')
     },
     setCurrentSquare: (squareNumber) => {
       currentPosition.textContent = `現在位置：マス${squareNumber}`

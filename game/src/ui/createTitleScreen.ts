@@ -10,6 +10,16 @@ export const createTitleScreen = (onStart: () => void): TitleScreen => {
   element.className = 'title-screen'
   element.setAttribute('aria-labelledby', 'game-title')
   element.innerHTML = `
+    <div class="title-fantasy-decoration" aria-hidden="true">
+      <span class="title-dice">⚄</span>
+      <span class="title-path title-path--1"></span>
+      <span class="title-path title-path--2"></span>
+      <span class="title-path title-path--3"></span>
+      <span class="title-path title-path--4"></span>
+    </div>
+    <div class="title-particles" aria-hidden="true">
+      ${Array.from({ length: 12 }, (_, index) => `<i style="--particle-index:${index}"></i>`).join('')}
+    </div>
     <div class="title-panel">
       <h1 id="game-title" class="game-title">サイコロを振ってプレゼントが決まる、人生ゲーム的なゲーム</h1>
       <p class="game-description">

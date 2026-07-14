@@ -14,6 +14,7 @@ export const createChapterBanner = (): ChapterBanner => {
   element.setAttribute('aria-live', 'polite')
   element.innerHTML = `
     <div class="chapter-banner-panel">
+      <div class="chapter-banner-ornament" aria-hidden="true">✦</div>
       <p class="chapter-banner-number"></p>
       <p class="chapter-banner-title"></p>
     </div>
@@ -37,6 +38,7 @@ export const createChapterBanner = (): ChapterBanner => {
     finish()
     number.textContent = `第${chapterNumber}章`
     title.textContent = chapterTitle
+    element.dataset.chapter = String(chapterNumber)
     element.hidden = false
 
     void element.offsetWidth

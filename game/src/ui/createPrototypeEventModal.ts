@@ -96,7 +96,7 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
   const show = (event: DisplayEventData) => {
     if (pendingPromise) return pendingPromise
 
-    label.textContent = `第${event.chapter}章・${event.category}`
+    label.textContent = `第${event.chapter}章・マス${event.squareId}・${event.category}`
     title.textContent = event.title
     description.textContent = event.description
     outcome.textContent = event.outcomeLabel ?? ''
@@ -106,6 +106,16 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
       : ''
     cardNotice.hidden = !event.acquiredCardName
     modifier.hidden = !event.jobModifierApplied
+    const isAccident = event.eventId.startsWith('EV_ACCIDENT_')
+    element.classList.toggle('prototype-event-modal--accident', isAccident)
+    element.classList.toggle(
+      'prototype-event-modal--safe',
+      isAccident && event.eventId === 'EV_ACCIDENT_NONE',
+    )
+    const card = element.querySelector<HTMLElement>('.prototype-event-card')!
+    card.classList.remove('prototype-event-card--entering')
+    void card.offsetWidth
+    card.classList.add('prototype-event-card--entering')
 
     ;(['point', 'health', 'love'] as const).forEach((status) => {
       const changeElement = changeElements[status]

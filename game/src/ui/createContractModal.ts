@@ -26,6 +26,7 @@ export const createContractModal = (): ContractModal => {
         </dl>
         <div class="contract-stamp" aria-label="五十嵐の印鑑">五十嵐</div>
         <p class="contract-established">契約成立</p>
+        <p class="contract-filed">人生ノートへ記録</p>
       </article>
       <button class="contract-confirm" type="button">契約する</button>
     </section>
@@ -41,6 +42,10 @@ export const createContractModal = (): ContractModal => {
   const established = element.querySelector<HTMLElement>(
     '.contract-established',
   )!
+  const documentElement = element.querySelector<HTMLElement>(
+    '.contract-document',
+  )!
+  const filed = element.querySelector<HTMLElement>('.contract-filed')!
   const confirmButton = element.querySelector<HTMLButtonElement>(
     '.contract-confirm',
   )!
@@ -69,11 +74,16 @@ export const createContractModal = (): ContractModal => {
       confirmButton.textContent = '契約成立'
     }, 700)
     schedule(() => {
+      established.classList.remove('contract-established--visible')
+      filed.classList.add('contract-filed--visible')
+      documentElement.classList.add('contract-document--filed')
+    }, 1_150)
+    schedule(() => {
       element.hidden = true
       resolvePending?.()
       resolvePending = undefined
       pendingPromise = undefined
-    }, 1_450)
+    }, 1_750)
   }
 
   const show = (contract: ContractData) => {
@@ -86,6 +96,8 @@ export const createContractModal = (): ContractModal => {
     risk.textContent = contract.risk
     stamp.classList.remove('contract-stamp--pressed')
     established.classList.remove('contract-established--visible')
+    filed.classList.remove('contract-filed--visible')
+    documentElement.classList.remove('contract-document--filed')
     panel.classList.remove('contract-panel--impact')
     confirmButton.disabled = false
     confirmButton.textContent = '契約する'

@@ -65,6 +65,10 @@ export const createLifeCardInventory = (
 
     quantities.forEach((quantity, cardId) => {
       const card = getLifeCardById(cardId)
+      const acquiredSquares = ownedCards
+        .filter((ownedCard) => ownedCard.cardId === cardId)
+        .map(({ acquiredAtSquare }) => `マス${acquiredAtSquare}`)
+        .join('、')
       const item = document.createElement('article')
       item.className = `life-card-inventory-item life-card-inventory-item--${card.type}`
       item.innerHTML = `
@@ -73,10 +77,13 @@ export const createLifeCardInventory = (
           <p class="life-card-inventory-type">${card.typeLabel}</p>
           <h3>${card.name} <span>×${quantity}</span></h3>
           <p class="life-card-inventory-description"></p>
+          <p class="life-card-inventory-location"></p>
         </div>
       `
       item.querySelector<HTMLElement>('.life-card-inventory-description')!
         .textContent = card.description
+      item.querySelector<HTMLElement>('.life-card-inventory-location')!
+        .textContent = `取得：${acquiredSquares}`
       list.appendChild(item)
     })
   }
