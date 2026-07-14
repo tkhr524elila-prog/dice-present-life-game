@@ -22,6 +22,10 @@ export const validateBoardDataV2 = (): BoardDataValidationResultV2 => {
   expect(physicalIds.size === 120, 'physicalIdが重複しています。')
   expect(eventIds.size === 120, 'eventIdが重複しています。')
   expect(progressValues.size === 100, '進行度1～100に欠落があります。')
+  expect(
+    BOARD_SQUARES_V2.every(({ positionPlaceholder }) => positionPlaceholder !== null),
+    '3D表示用の座標が未設定の物理マスがあります。',
+  )
 
   for (let progress = 1; progress <= 100; progress += 1) {
     expect(progressValues.has(progress), `進行度${progress}がありません。`)
@@ -90,6 +94,17 @@ export const validateBoardDataV2 = (): BoardDataValidationResultV2 => {
   expect(forcedStops.length === 6, '強制ストップが6か所ではありません。')
   expect(new Set(forcedStops.map(({ forcedStopType }) => forcedStopType)).size === 6, '強制ストップ種別が重複しています。')
 
+  const directCardEvents = BOARD_SQUARES_V2.filter(
+    ({ guaranteedCardId }) => guaranteedCardId !== null,
+  )
+  const conditionalCardEvents = BOARD_SQUARES_V2.filter(
+    ({ conditionalOutcomes }) => conditionalOutcomes.some(({ guaranteedCardId }) => guaranteedCardId !== null),
+  )
+  expect(
+    directCardEvents.length + conditionalCardEvents.length === 13,
+    '確定カードイベントが条件付き交通事故を含めて13件ではありません。',
+  )
+
   const characters = new Set(BOARD_SQUARES_V2.flatMap(({ characters }) => characters))
   ;['ひろむ', 'れいな', '田中さん', '平さん', '菊田さん', 'かな', 'いと'].forEach((name) => {
     expect(characters.has(name), `人物「${name}」がイベントデータに存在しません。`)
@@ -109,7 +124,7 @@ export const validateBoardDataV2 = (): BoardDataValidationResultV2 => {
     logicalPresentDrawCount: logicalPresentProgress.size,
     physicalPresentDrawCount: presentSquares.length,
     forcedStopCount: forcedStops.length,
-    directGuaranteedCardEventCount: BOARD_SQUARES_V2.filter(({ guaranteedCardId }) => guaranteedCardId !== null).length,
-    conditionalGuaranteedCardEventCount: BOARD_SQUARES_V2.filter(({ conditionalOutcomes }) => conditionalOutcomes.some(({ guaranteedCardId }) => guaranteedCardId !== null)).length,
+    directGuaranteedCardEventCount: directCardEvents.length,
+    conditionalGuaranteedCardEventCount: conditionalCardEvents.length,
   }
 }

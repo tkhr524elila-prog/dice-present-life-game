@@ -4,8 +4,8 @@ import {
   type LifeCardData,
 } from '../data/lifeCardData'
 import {
-  getLoveRange,
-  PRESENT_DRAW_TABLES,
+  calculateLoveDrawRates,
+  verifyContinuousLoveDrawRates,
 } from '../data/presentDrawTables'
 
 type DrawLifeCardOptions = {
@@ -31,7 +31,7 @@ export const drawLifeCard = ({
     }
   }
 
-  const table = PRESENT_DRAW_TABLES[getLoveRange(love)]
+  const table = calculateLoveDrawRates(love)
   const roll = Math.min(Math.max(random(), 0), 0.999999999) * 100
   let cumulativeWeight = 0
 
@@ -57,13 +57,8 @@ export const verifyPresentDrawRules = () => {
     throw new Error('ライフカード定義の件数またはIDが正しくありません。')
   }
 
-  Object.entries(PRESENT_DRAW_TABLES).forEach(([range, table]) => {
-    const total = table.reduce((sum, entry) => sum + entry.weight, 0)
-    if (total !== 100) {
-      throw new Error(`${range}のプレゼント抽選率が100%ではありません。`)
-    }
-    table.forEach(({ cardId }) => getLifeCardById(cardId))
-  })
+  verifyContinuousLoveDrawRates()
+  calculateLoveDrawRates(50).forEach(({ cardId }) => getLifeCardById(cardId))
 
   const guaranteed = drawLifeCard({
     love: 50,
@@ -84,13 +79,12 @@ export const verifyPresentDrawRules = () => {
     }).card
 
   if (
-    drawAt(29, 0).cardId !== 'PRIZE_SUKIYA' ||
-    drawAt(30, 0).cardId !== 'PRIZE_SUKIYA' ||
-    drawAt(69, 0.99).cardId !== 'SPECIAL_LODGER' ||
-    drawAt(70, 0.99).cardId !== 'SPECIAL_LODGER' ||
+    drawAt(0, 0).cardId !== 'PRIZE_SUKIYA' ||
+    drawAt(100, 0).cardId !== 'PRIZE_SUKIYA' ||
     drawAt(50, 0).type !== 'prize' ||
     drawAt(50, 0.99).type !== 'special' ||
-    drawAt(50, 0.945).type !== 'trouble'
+    drawAt(0, 0.5).type !== 'trouble' ||
+    drawAt(100, 0.5).type !== 'prize'
   ) {
     throw new Error('愛情別プレゼント抽選の境界値テストに失敗しました。')
   }

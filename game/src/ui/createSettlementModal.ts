@@ -5,6 +5,7 @@ export type SettlementOverview = {
   job: string
   romance: string
   hasNisa: boolean
+  hasNisaSecondSlot?: boolean
   hasMedicalInsurance: boolean
   isCarInsuranceActive: boolean
   lifeCardCount: number
@@ -110,6 +111,7 @@ export const createSettlementModal = (): SettlementModal => {
           ['職業', overview.job],
           ['恋愛スタイル', overview.romance],
           ['NISA', overview.hasNisa ? '始めた' : '始めなかった'],
+          ['NISA2枠目', overview.hasNisaSecondSlot ? '契約済み' : '未契約'],
           ['医療保険', overview.hasMedicalInsurance ? '加入済み' : '未加入'],
           ['自動車保険', overview.isCarInsuranceActive ? '更新済み' : '未更新'],
           ['現在のポイント', `${formatNumber(result.startingPoints)}ポイント`],
@@ -180,7 +182,7 @@ export const createSettlementModal = (): SettlementModal => {
       },
       () => {
         const stage = createStage('契約精算', 'NISA運用結果')
-        if (result.nisaResult === null) {
+        if (result.nisaResults.length === 0) {
           const message = document.createElement('p')
           message.textContent = 'NISAは始めませんでした'
           const pointsBeforeNisa = result.startingPoints + result.lodgerPointsChange + result.troubleTotal
@@ -190,26 +192,70 @@ export const createSettlementModal = (): SettlementModal => {
             ['処理後', `${formatNumber(pointsBeforeNisa)}ポイント`],
           ]))
         } else {
-          const roulette = document.createElement('div')
-          roulette.className = 'settlement-nisa-result settlement-nisa-result--rolling'
-          roulette.textContent = '運用結果を計算中…'
+          const pointsBeforeNisa = result.startingPoints + result.lodgerPointsChange + result.troubleTotal
+          const chart = document.createElement('div')
+          chart.className = 'settlement-nisa-chart settlement-nisa-chart--moving'
+          chart.innerHTML = `
+            <div class="settlement-nisa-chart-grid" aria-hidden="true"></div>
+            <svg viewBox="0 0 600 150" role="img" aria-label="上下に動くNISA運用チャート">
+              <polyline points="0,100 55,68 110,91 165,46 220,75 275,32 330,63 385,43 440,82 495,51 550,70 600,35" />
+            </svg>
+          `
+          const slotLabel = document.createElement('p')
+          slotLabel.className = 'settlement-nisa-slot'
+          const resultList = document.createElement('div')
+          resultList.className = 'settlement-nisa-slot-results'
+          const stopButton = document.createElement('button')
+          stopButton.className = 'settlement-nisa-stop'
+          stopButton.type = 'button'
+          let currentSlot = 0
+          let isRevealed = false
+
+          const prepareSlot = () => {
+            isRevealed = false
+            chart.classList.add('settlement-nisa-chart--moving')
+            chart.classList.remove('settlement-nisa-chart--gain', 'settlement-nisa-chart--loss')
+            slotLabel.textContent = `${currentSlot + 1}枠目のチャート` 
+            stopButton.textContent = 'ストップ'
+          }
+
+          stopButton.addEventListener('click', () => {
+            if (!isRevealed) {
+              isRevealed = true
+              const value = result.nisaResults[currentSlot]!
+              chart.classList.remove('settlement-nisa-chart--moving')
+              chart.classList.add(value >= 0 ? 'settlement-nisa-chart--gain' : 'settlement-nisa-chart--loss')
+              const line = document.createElement('p')
+              line.className = value >= 0 ? 'settlement-nisa-slot-result is-positive' : 'settlement-nisa-slot-result is-negative'
+              line.textContent = `${currentSlot + 1}枠目：${formatChange(value)}`
+              resultList.appendChild(line)
+              if (currentSlot < result.nisaResults.length - 1) {
+                stopButton.textContent = `${currentSlot + 2}枠目へ`
+              } else {
+                stopButton.hidden = true
+                total.hidden = false
+                nisaDetails.hidden = false
+                nextButton.disabled = false
+              }
+              return
+            }
+            currentSlot += 1
+            prepareSlot()
+          })
+
+          const total = document.createElement('p')
+          total.className = 'settlement-nisa-total'
+          total.textContent = `合計結果：${formatChange(result.nisaResult ?? 0)}`
+          total.hidden = true
           const nisaDetails = createValueGrid([
-            ['処理前', `${formatNumber(result.startingPoints + result.lodgerPointsChange + result.troubleTotal)}ポイント`],
-            ['運用結果', '抽選中…'],
-            ['処理後', '計算中…'],
+            ['処理前', `${formatNumber(pointsBeforeNisa)}ポイント`],
+            ['運用結果合計', formatChange(result.nisaResult ?? 0)],
+            ['処理後', `${formatNumber(pointsBeforeNisa + (result.nisaResult ?? 0))}ポイント`],
           ])
-          stage.append(roulette, nisaDetails)
+          nisaDetails.hidden = true
+          stage.append(slotLabel, chart, resultList, stopButton, total, nisaDetails)
           nextButton.disabled = true
-          const timer = window.setTimeout(() => {
-            roulette.classList.remove('settlement-nisa-result--rolling')
-            roulette.textContent = formatChange(result.nisaResult!)
-            const details = nisaDetails.querySelectorAll('dd')
-            details[1]!.textContent = formatChange(result.nisaResult!)
-            details[2]!.textContent = `${formatNumber(result.startingPoints + result.lodgerPointsChange + result.troubleTotal + result.nisaResult!)}ポイント`
-            nextButton.disabled = false
-            timers.delete(timer)
-          }, 1_000)
-          timers.add(timer)
+          prepareSlot()
         }
         return stage
       },
@@ -281,7 +327,9 @@ export const createSettlementModal = (): SettlementModal => {
           ['最終愛情', String(result.finalLove)],
           ['職業', overview.job],
           ['恋愛スタイル', overview.romance],
-          ['NISA結果', result.nisaResult === null ? '未加入' : formatChange(result.nisaResult)],
+          ['NISA結果', result.nisaResult === null
+            ? '未加入'
+            : result.nisaResults.map((value, index) => `${index + 1}枠目 ${formatChange(value)}`).join('／')],
           ['医療保険給付', formatChange(result.medicalInsuranceBenefit)],
           ['健康倍率', formatMultiplier(result.healthMultiplier)],
         ]))

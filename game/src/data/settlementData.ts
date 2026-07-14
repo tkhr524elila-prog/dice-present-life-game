@@ -40,11 +40,10 @@ export const getMedicalInsuranceBenefit = (health: number) => {
 }
 
 export const getHealthMultiplier = (health: number) => {
-  if (health <= 19) return 0.7
-  if (health <= 39) return 0.85
-  if (health <= 59) return 1
-  if (health <= 79) return 1.1
-  return 1.2
+  const clampedHealth = Math.min(100, Math.max(0, health))
+  return clampedHealth <= 40
+    ? 0.7 + clampedHealth * 0.0075
+    : 1 + (clampedHealth - 40) * 0.005
 }
 
 export const verifySettlementData = () => {
@@ -61,8 +60,8 @@ export const verifySettlementData = () => {
     [40, 500], [59, 500], [60, 0], [100, 0],
   ] as const
   const multiplierCases = [
-    [0, 0.7], [19, 0.7], [20, 0.85], [39, 0.85],
-    [40, 1], [59, 1], [60, 1.1], [79, 1.1], [80, 1.2], [100, 1.2],
+    [0, 0.7], [1, 0.7075], [39, 0.9925], [40, 1],
+    [41, 1.005], [99, 1.295], [100, 1.3],
   ] as const
 
   if (
@@ -70,7 +69,7 @@ export const verifySettlementData = () => {
       getMedicalInsuranceBenefit(health) !== expected,
     ) ||
     multiplierCases.some(([health, expected]) =>
-      getHealthMultiplier(health) !== expected,
+      Math.abs(getHealthMultiplier(health) - expected) > 1e-12,
     )
   ) {
     throw new Error('医療保険給付または健康倍率の境界値テストに失敗しました。')

@@ -8,7 +8,8 @@ export const recordSettlementHistory = (
 ) => {
   const historyBase = {
     type: 'settlement' as const,
-    squareId: 60,
+    squareId: 100,
+    displayId: '100',
     chapter: 5,
     cardId: null,
     loveAtOccurrence: null,
@@ -24,7 +25,7 @@ export const recordSettlementHistory = (
       .map((card) => `${card.name}×${card.count}`)
       .join('、')
 
-  ;[
+  const entries = [
     {
       title: '居候カード精算',
       description: settlement.lodgerCount === 0
@@ -43,16 +44,25 @@ export const recordSettlementHistory = (
       loveChange: 0,
       deduplicationKey: 'settlement:trouble',
     },
-    {
-      title: 'NISA運用結果',
-      description: settlement.nisaResult === null
-        ? 'NISAは始めませんでした。'
-        : `運用結果は${settlement.nisaResult.toLocaleString('ja-JP')}ポイントだった。`,
-      pointsChange: settlement.nisaResult ?? 0,
-      healthChange: 0,
-      loveChange: 0,
-      deduplicationKey: 'settlement:nisa',
-    },
+    ...(
+      settlement.nisaResults.length === 0
+        ? [{
+            title: 'NISA運用結果',
+            description: 'NISAは始めませんでした。',
+            pointsChange: 0,
+            healthChange: 0,
+            loveChange: 0,
+            deduplicationKey: 'settlement:nisa:none',
+          }]
+        : settlement.nisaResults.map((value, index) => ({
+            title: `NISA${index + 1}枠目の運用結果`,
+            description: `${index + 1}枠目の運用結果は${value.toLocaleString('ja-JP')}ポイントだった。`,
+            pointsChange: value,
+            healthChange: 0,
+            loveChange: 0,
+            deduplicationKey: `settlement:nisa:${index + 1}`,
+          }))
+    ),
     {
       title: '医療保険精算',
       description: hasMedicalInsurance
@@ -95,7 +105,8 @@ export const recordSettlementHistory = (
       loveChange: 0,
       deduplicationKey: 'settlement:game-finished',
     },
-  ].forEach((entry) => gameState.addLifeHistory({
+  ]
+  entries.forEach((entry) => gameState.addLifeHistory({
     ...historyBase,
     ...entry,
   }))
@@ -120,5 +131,25 @@ export const verifySettlementHistoryRules = () => {
     history[history.length - 1]?.title !== 'ゲーム終了'
   ) {
     throw new Error('最終精算履歴の記録・二重防止テストに失敗しました。')
+  }
+
+  const nisaStore = createGameStateStore()
+  const nisaResult = calculateSettlement({
+    points: 1_000,
+    health: 40,
+    love: 50,
+    hasNisa: true,
+    hasNisaSecondSlot: true,
+    hasMedicalInsurance: false,
+    ownedLifeCards: [],
+  }, [0, 0.9999])
+  recordSettlementHistory(nisaStore, nisaResult, false)
+  const nisaHistory = nisaStore.getState().lifeHistory
+  if (
+    nisaHistory.filter(({ title }) => title.includes('NISA1枠目')).length !== 1 ||
+    nisaHistory.filter(({ title }) => title.includes('NISA2枠目')).length !== 1 ||
+    nisaHistory.some(({ squareId, displayId }) => squareId !== 100 || displayId !== '100')
+  ) {
+    throw new Error('NISA2枠の個別結果またはゴール100の履歴記録テストに失敗しました。')
   }
 }

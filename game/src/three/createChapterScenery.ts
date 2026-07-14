@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import { BOARD_SQUARES, type ChapterNumber } from '../data/boardData'
+import type { ChapterNumber } from '../data/boardData'
+import { BOARD_SQUARES_V2 } from '../data/v2/boardDataV2'
 
 type ChapterScenery = {
   group: THREE.Group
@@ -8,8 +9,17 @@ type ChapterScenery = {
   dispose: () => void
 }
 
-const getAnchor = (squareId: number) =>
-  new THREE.Vector3(...BOARD_SQUARES[squareId - 1]!.position)
+const getAnchor = (progress: number) => {
+  const candidates = BOARD_SQUARES_V2.filter((square) => square.progress === progress)
+  const positions = candidates
+    .map(({ positionPlaceholder }) => positionPlaceholder)
+    .filter((position) => position !== null)
+  const average = positions.reduce<THREE.Vector3>(
+    (sum, position) => sum.add(new THREE.Vector3(position.x, position.y, position.z)),
+    new THREE.Vector3(),
+  ).divideScalar(Math.max(1, positions.length))
+  return average
+}
 
 export const createChapterScenery = (): ChapterScenery => {
   const group = new THREE.Group()
@@ -58,7 +68,7 @@ export const createChapterScenery = (): ChapterScenery => {
     const parent = chapterGroup(1)
     const green = material(0x4f9d5d)
     const flowerColors = [0xffd65a, 0xff8fa3, 0xf8f4ff]
-    ;[2, 5, 8, 11].forEach((squareId, index) => {
+    ;[3, 8, 13, 18].forEach((squareId, index) => {
       const anchor = getAnchor(squareId)
       const side = index % 2 === 0 ? -1 : 1
       for (let flower = 0; flower < 3; flower += 1) {
@@ -68,7 +78,7 @@ export const createChapterScenery = (): ChapterScenery => {
         addMesh(parent, new THREE.SphereGeometry(0.13, 10, 8), material(flowerColors[(index + flower) % flowerColors.length]!), new THREE.Vector3(x, -0.48, z))
       }
     })
-    const bookAnchor = getAnchor(6)
+    const bookAnchor = getAnchor(10)
     const book = addMesh(parent, new THREE.BoxGeometry(1.25, 0.16, 0.88), material(0x476fb3), bookAnchor.clone().add(new THREE.Vector3(6, -0.78, 0)))
     book.rotation.y = -0.28
     addMesh(parent, new THREE.BoxGeometry(1.08, 0.1, 0.74), material(0xf7e8c6), book.position.clone().add(new THREE.Vector3(0, 0.13, 0)))
@@ -77,7 +87,7 @@ export const createChapterScenery = (): ChapterScenery => {
   // 第2章：建物と街灯
   {
     const parent = chapterGroup(2)
-    ;[14, 18, 22, 25].forEach((squareId, index) => {
+    ;[23, 28, 34, 39].forEach((squareId, index) => {
       const anchor = getAnchor(squareId)
       const side = index % 2 === 0 ? 1 : -1
       const building = addMesh(parent, new THREE.BoxGeometry(2.4, 3 + index * 0.35, 2.2), material(index % 2 ? 0x536c82 : 0x657f93), anchor.clone().add(new THREE.Vector3(side * 7, 0.45 + index * 0.18, 0)))
@@ -97,7 +107,7 @@ export const createChapterScenery = (): ChapterScenery => {
   {
     const parent = chapterGroup(3)
     const neonColors = [0xff4fac, 0x65d8ff, 0xb98cff]
-    ;[28, 31, 34, 37].forEach((squareId, index) => {
+    ;[43, 48, 53, 58].forEach((squareId, index) => {
       const anchor = getAnchor(squareId)
       const side = index % 2 === 0 ? -1 : 1
       const signMaterial = material(neonColors[index % neonColors.length]!, neonColors[index % neonColors.length]!)
@@ -111,7 +121,7 @@ export const createChapterScenery = (): ChapterScenery => {
   // 第4章：家、木、公園
   {
     const parent = chapterGroup(4)
-    ;[40, 44, 48].forEach((squareId, index) => {
+    ;[65, 72, 79].forEach((squareId, index) => {
       const anchor = getAnchor(squareId)
       const side = index % 2 === 0 ? 1 : -1
       const homePosition = anchor.clone().add(new THREE.Vector3(side * 7, -0.1, 0))
@@ -127,7 +137,7 @@ export const createChapterScenery = (): ChapterScenery => {
   // 第5章：山、雲、金色の道標
   {
     const parent = chapterGroup(5)
-    ;[52, 56, 59].forEach((squareId, index) => {
+    ;[84, 92, 99].forEach((squareId, index) => {
       const anchor = getAnchor(squareId)
       const side = index % 2 === 0 ? -1 : 1
       const mountain = addMesh(parent, new THREE.ConeGeometry(2.8 + index * 0.35, 5.5 + index, 5), material(index === 2 ? 0xd8c276 : 0xb7cbd7), anchor.clone().add(new THREE.Vector3(side * 8, 1.35 + index * 0.5, 1)))

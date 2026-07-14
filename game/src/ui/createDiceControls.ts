@@ -5,7 +5,7 @@ type DiceControls = {
   element: HTMLElement
   setPhase: (phase: PrototypeTurnPhase) => void
   setResult: (value: DiceValue) => void
-  setCurrentSquare: (squareNumber: number) => void
+  setCurrentSquare: (squareNumber: number | string) => void
   setCurrentSquareType: (squareType: string) => void
   setCurrentChapter: (chapterNumber: number, chapterTitle: string) => void
   dispose: () => void

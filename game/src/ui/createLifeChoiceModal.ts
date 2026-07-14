@@ -66,7 +66,17 @@ const createOptionCard = (
   button.className = 'life-choice-select'
   button.type = 'button'
   button.textContent = `${option.label}を選ぶ`
+  button.disabled = Boolean(option.disabledReason)
+  button.title = option.disabledReason ?? ''
   button.addEventListener('click', () => onSelect(option), { once: true })
+
+  if (option.disabledReason) {
+    const reason = document.createElement('p')
+    reason.className = 'life-choice-disabled-reason'
+    reason.textContent = option.disabledReason
+    card.append(title, description, points, comparisons, reason, button)
+    return card
+  }
 
   card.append(title, description, points, comparisons, button)
   return card
@@ -99,17 +109,41 @@ export const createLifeChoiceModal = (): LifeChoiceModal => {
 
   const select = (option: LifeChoiceOption) => {
     if (!resolvePending) return
-    options.querySelectorAll('button').forEach((button) => {
-      button.disabled = true
-    })
-    element.hidden = true
-    resolvePending(option)
-    resolvePending = undefined
-    pendingPromise = undefined
+    const confirmation = document.createElement('section')
+    confirmation.className = 'life-choice-confirmation'
+    const question = document.createElement('h3')
+    question.textContent = `「${option.label}」を選択してもよろしいですか？`
+    const yes = document.createElement('button')
+    yes.type = 'button'
+    yes.textContent = 'はい'
+    const no = document.createElement('button')
+    no.type = 'button'
+    no.textContent = 'いいえ'
+    confirmation.append(question, yes, no)
+    options.replaceChildren(confirmation)
+    yes.addEventListener('click', () => {
+      if (!resolvePending) return
+      element.hidden = true
+      resolvePending(option)
+      resolvePending = undefined
+      pendingPromise = undefined
+    }, { once: true })
+    no.addEventListener('click', () => {
+      options.replaceChildren(
+        ...currentChoice!.options.map((currentOption) =>
+          createOptionCard(currentOption, select),
+        ),
+      )
+    }, { once: true })
+    yes.focus()
   }
+
+  let currentChoice: LifeChoiceData | undefined
 
   const show = (choice: LifeChoiceData) => {
     if (pendingPromise) return pendingPromise
+
+    currentChoice = choice
 
     title.textContent = choice.title
     description.textContent = choice.description

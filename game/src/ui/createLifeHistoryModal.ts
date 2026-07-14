@@ -54,7 +54,7 @@ const createHistoryItem = (entry: Readonly<LifeHistoryEntry>) => {
 
   const location = document.createElement('p')
   location.className = 'life-history-location'
-  location.textContent = `第${entry.chapter}章 ${chapter?.title ?? ''}　マス${entry.squareId}`
+  location.textContent = `第${entry.chapter}章 ${chapter?.title ?? ''}　マス${entry.displayId ?? entry.squareId}`
 
   const title = document.createElement('h3')
   title.textContent = entry.title

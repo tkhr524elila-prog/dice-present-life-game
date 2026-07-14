@@ -68,6 +68,31 @@ const getNextPhysicalIds = (
   return [padProgress(progress + 1)]
 }
 
+const getCommonX = (progress: number) =>
+  Math.sin(progress * 0.31) * 3.4 + Math.sin(progress * 0.09) * 1.6
+
+const createPosition = (
+  progress: number,
+  route: RouteTypeV2,
+) => {
+  const z = (progress - 1) * 1.72
+  const y = 1.05 + Math.sin(progress * 0.25) * 0.8 + Math.sin(progress * 0.07) * 0.45
+
+  if (route === 'common') {
+    return { x: getCommonX(progress), y, z }
+  }
+
+  const routeProgress = (progress - 40) / 21
+  const centerX =
+    getCommonX(40) + (getCommonX(61) - getCommonX(40)) * routeProgress
+  const separation = Math.sin(Math.PI * routeProgress) * 6.4
+  return {
+    x: centerX + (route === 'playboy' ? -separation : separation),
+    y: y + (route === 'playboy' ? 0.15 : -0.15),
+    z,
+  }
+}
+
 const createSquare = (physicalId: string): BoardSquareV2 => {
   const boardEvent = BOARD_EVENTS_BY_PHYSICAL_ID_V2.get(physicalId)
   if (!boardEvent) {
@@ -100,7 +125,7 @@ const createSquare = (physicalId: string): BoardSquareV2 => {
     isBranchStart: progress === 40,
     isBranchEnd: progress === 60,
     nextPhysicalIds: getNextPhysicalIds(progress, route),
-    positionPlaceholder: null,
+    positionPlaceholder: createPosition(progress, route),
   }
 }
 

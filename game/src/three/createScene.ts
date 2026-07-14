@@ -1,17 +1,18 @@
 import * as THREE from 'three'
 import {
-  getBoardSquare,
   getChapter,
-  type BoardSquareData,
 } from '../data/boardData'
-import { createBoard } from './createBoard'
+import { getBoardSquareV2 } from '../data/v2/boardDataV2'
+import type { BoardSquareV2 } from '../data/v2/boardTypesV2'
+import { createBoardV2 } from './createBoardV2'
 import { createPrototypeDice, type DiceValue } from './createPrototypeDice'
 import { createPrototypePlayer } from './createPrototypePlayer'
 import { createChapterScenery } from './createChapterScenery'
 
 type SceneController = {
   rollDice: () => Promise<DiceValue>
-  movePlayerTo: (squareNumber: number) => Promise<void>
+  movePlayerTo: (physicalId: string) => Promise<void>
+  setSelectedRoute: (route: 'playboy' | 'pure-love' | null) => void
   setUiFocus: (isFocused: boolean) => void
   dispose: () => void
 }
@@ -25,7 +26,7 @@ export const createScene = (container: HTMLElement): SceneController => {
   scene.background = backgroundColor
   scene.fog = new THREE.Fog(initialChapter.environment.fog, 14, 40)
 
-  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 80)
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 240)
   const cameraLookAt = new THREE.Vector3()
   const cameraLookAtGoal = new THREE.Vector3()
   const cameraPositionGoal = new THREE.Vector3()
@@ -37,7 +38,7 @@ export const createScene = (container: HTMLElement): SceneController => {
   let cameraDistanceScale = 1
   let cameraPullback = 1
   let isUiFocused = false
-  let currentSquareNumber = 1
+  let currentPhysicalId = '001'
   let currentChapterNumber = 1
 
   const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -45,22 +46,22 @@ export const createScene = (container: HTMLElement): SceneController => {
   renderer.shadowMap.enabled = true
   renderer.domElement.setAttribute(
     'aria-label',
-    '60マス、5章、仮主人公、3Dサイコロを表示する確認画面',
+    '100進行度、120物理マス、A・B恋愛分岐を表示するゲーム画面',
   )
   container.appendChild(renderer.domElement)
 
-  const groundGeometry = new THREE.PlaneGeometry(40, 126)
+  const groundGeometry = new THREE.PlaneGeometry(52, 190)
   const groundMaterial = new THREE.MeshStandardMaterial({
     color: initialChapter.environment.ground,
     roughness: 0.95,
   })
   const ground = new THREE.Mesh(groundGeometry, groundMaterial)
   ground.rotation.x = -Math.PI / 2
-  ground.position.set(0, -1.1, 48)
+  ground.position.set(0, -1.1, 84)
   ground.receiveShadow = true
   scene.add(ground)
 
-  const board = createBoard()
+  const board = createBoardV2()
   scene.add(board.group)
 
   const chapterScenery = createChapterScenery()
@@ -94,7 +95,7 @@ export const createScene = (container: HTMLElement): SceneController => {
     directionalLight: directionalLight.color.clone(),
   }
 
-  const setEnvironmentForSquare = (square: BoardSquareData) => {
+  const setEnvironmentForSquare = (square: BoardSquareV2) => {
     const environment = getChapter(square.chapter).environment
     environmentTargets.background.set(environment.background)
     environmentTargets.ground.set(environment.ground)
@@ -103,15 +104,19 @@ export const createScene = (container: HTMLElement): SceneController => {
     environmentTargets.directionalLight.set(environment.directionalLight)
   }
 
-  const updateViewForSquare = (squareNumber: number, immediate = false) => {
-    const square = getBoardSquare(squareNumber)
+  const updateViewForSquare = (physicalId: string, immediate = false) => {
+    const square = getBoardSquareV2(physicalId)
     if (!square) return
 
-    currentSquareNumber = squareNumber
-    const squarePosition = squarePositionScratch.set(...square.position)
-    const nextSquare = getBoardSquare(Math.min(60, squareNumber + 2))
+    currentPhysicalId = physicalId
+    const squareSource = square.positionPlaceholder
+    if (!squareSource) return
+    const squarePosition = squarePositionScratch.set(squareSource.x, squareSource.y, squareSource.z)
+    const nextId = square.nextPhysicalIds[0]
+    const nextSquare = nextId ? getBoardSquareV2(nextId) : undefined
+    const nextSource = nextSquare?.positionPlaceholder
     const lookAhead = nextSquare
-      ? nextSquarePositionScratch.set(...nextSquare.position).sub(squarePosition).multiplyScalar(0.38)
+      ? nextSquarePositionScratch.set(nextSource!.x, nextSource!.y, nextSource!.z).sub(squarePosition).multiplyScalar(0.38)
       : lookAheadScratch.set(0, 0, 2.5)
     cameraLookAtGoal.copy(squarePosition).add(lookAhead)
     cameraLookAtGoal.y += 0.35
@@ -130,7 +135,7 @@ export const createScene = (container: HTMLElement): SceneController => {
     }
   }
 
-  updateViewForSquare(1, true)
+  updateViewForSquare('001', true)
 
   const resize = () => {
     const width = Math.max(container.clientWidth, 1)
@@ -141,7 +146,7 @@ export const createScene = (container: HTMLElement): SceneController => {
     camera.aspect = aspect
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
-    updateViewForSquare(currentSquareNumber, true)
+    updateViewForSquare(currentPhysicalId, true)
   }
 
   window.addEventListener('resize', resize)
@@ -153,7 +158,7 @@ export const createScene = (container: HTMLElement): SceneController => {
     const deltaSeconds = Math.min(Math.max((time - previousTime) / 1_000, 0), 0.1)
     previousTime = time
     cameraPullback += (1 - cameraPullback) * (1 - Math.exp(-deltaSeconds * 0.9))
-    updateViewForSquare(currentSquareNumber)
+    updateViewForSquare(currentPhysicalId)
     const interpolation = 1 - Math.exp(-deltaSeconds * (isUiFocused ? 1.8 : 3.4))
 
     prototypeDice.update(time)
@@ -176,9 +181,9 @@ export const createScene = (container: HTMLElement): SceneController => {
 
   return {
     rollDice: prototypeDice.roll,
-    movePlayerTo: (squareNumber) => {
-      const targetPosition = board.squarePositions[squareNumber - 1]
-      const square = getBoardSquare(squareNumber)
+    movePlayerTo: (physicalId) => {
+      const targetPosition = board.squarePositions.get(physicalId)
+      const square = getBoardSquareV2(physicalId)
       if (!targetPosition || !square) return Promise.resolve()
 
       if (square.chapter !== currentChapterNumber) {
@@ -186,12 +191,14 @@ export const createScene = (container: HTMLElement): SceneController => {
         cameraPullback = 1.28
         chapterScenery.setChapter(square.chapter)
       }
-      board.setCurrentSquare(squareNumber)
-      updateViewForSquare(squareNumber)
-      return prototypePlayer.moveTo(targetPosition).then(() => {
+      board.setCurrentSquare(physicalId)
+      updateViewForSquare(physicalId)
+      const playerTarget = targetPosition.clone().add(new THREE.Vector3(-0.34, 0.4, 0.3))
+      return prototypePlayer.moveTo(playerTarget).then(() => {
         setEnvironmentForSquare(square)
       })
     },
+    setSelectedRoute: (route) => board.setSelectedRoute(route),
     setUiFocus: (isFocused) => {
       isUiFocused = isFocused
     },

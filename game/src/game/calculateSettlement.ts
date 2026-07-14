@@ -11,6 +11,7 @@ export type SettlementInput = {
   health: number
   love: number
   hasNisa: boolean
+  hasNisaSecondSlot?: boolean
   hasMedicalInsurance: boolean
   ownedLifeCards: readonly OwnedLifeCard[]
 }
@@ -26,6 +27,7 @@ export type SettlementResult = {
   troubleCards: readonly SettledCardSummary[]
   troubleTotal: number
   nisaResult: number | null
+  nisaResults: readonly number[]
   finalHealth: number
   finalLove: number
   medicalInsuranceBenefit: number
@@ -40,14 +42,21 @@ const clampStatus = (value: number) => Math.min(100, Math.max(0, value))
 
 export const calculateSettlement = (
   input: SettlementInput,
-  randomValue = Math.random(),
+  randomValues: number | readonly number[] = Math.random(),
 ): SettlementResult => {
   const cardSettlement = settleLifeCards(input.ownedLifeCards)
   const finalHealth = clampStatus(
     input.health + cardSettlement.lodgerChanges.health,
   )
   const finalLove = clampStatus(input.love + cardSettlement.lodgerChanges.love)
-  const nisaResult = input.hasNisa ? resolveNisaResult(randomValue) : null
+  const values = Array.isArray(randomValues) ? randomValues : [randomValues]
+  const nisaDrawCount = input.hasNisa ? (input.hasNisaSecondSlot ? 2 : 1) : 0
+  const nisaResults = Array.from({ length: nisaDrawCount }, (_, index) =>
+    resolveNisaResult(values[index] ?? Math.random()),
+  )
+  const nisaResult = nisaResults.length === 0
+    ? null
+    : nisaResults.reduce((sum, result) => sum + result, 0)
   const medicalInsuranceBenefit = input.hasMedicalInsurance
     ? getMedicalInsuranceBenefit(finalHealth)
     : 0
@@ -74,6 +83,7 @@ export const calculateSettlement = (
     troubleCards: cardSettlement.troubleCards,
     troubleTotal: cardSettlement.troubleTotal,
     nisaResult,
+    nisaResults,
     finalHealth,
     finalLove,
     medicalInsuranceBenefit,
@@ -105,13 +115,14 @@ export const verifySettlementCalculationRules = () => {
       'TROUBLE_CAR_REPAIR',
       'TROUBLE_PROPERTY_TAX',
     ]),
-  }, 0)
+  }, [0])
   if (
     patternA.finalHealth !== 20 ||
     patternA.finalLove !== 50 ||
     patternA.nisaResult !== -500 ||
     patternA.medicalInsuranceBenefit !== 1_500 ||
     patternA.pointsBeforeHealthMultiplier !== 3_500 ||
+    patternA.nisaResults.length !== 1 ||
     patternA.healthMultiplier !== 0.85 ||
     patternA.finalCash !== 2_975
   ) {
@@ -129,8 +140,8 @@ export const verifySettlementCalculationRules = () => {
   if (
     patternB.nisaResult !== null ||
     patternB.medicalInsuranceBenefit !== 0 ||
-    patternB.pointsAfterHealthMultiplier !== 1_201 ||
-    patternB.finalCash !== 1_201 ||
+    patternB.pointsAfterHealthMultiplier !== 1_251 ||
+    patternB.finalCash !== 1_251 ||
     patternB.prizeCards.length !== 2 ||
     patternB.troubleCards.length !== 0
   ) {
@@ -151,9 +162,27 @@ export const verifySettlementCalculationRules = () => {
     patternC.finalHealth !== 100 ||
     patternC.finalLove !== 100 ||
     patternC.lodgerPointsChange !== -1_500 ||
-    patternC.pointsAfterHealthMultiplier !== -1_920 ||
+    patternC.pointsAfterHealthMultiplier !== -2_080 ||
     patternC.finalCash !== 0
   ) {
     throw new Error('精算テストC（居候複数・上限補正・0円補正）に失敗しました。')
+  }
+
+  const nisaTwoSlots = calculateSettlement({
+    points: 1_000,
+    health: 40,
+    love: 50,
+    hasNisa: true,
+    hasNisaSecondSlot: true,
+    hasMedicalInsurance: false,
+    ownedLifeCards: [],
+  }, [0, 0.9999])
+  if (
+    nisaTwoSlots.nisaResults.length !== 2 ||
+    nisaTwoSlots.nisaResults[0] !== -500 ||
+    nisaTwoSlots.nisaResults[1] !== 4_000 ||
+    nisaTwoSlots.nisaResult !== 3_500
+  ) {
+    throw new Error('NISA2枠目の個別抽選・合算テストに失敗しました。')
   }
 }

@@ -5,61 +5,54 @@ export type PresentDrawEntry = {
   weight: number
 }
 
-export type LoveRange = 'low' | 'middle' | 'high'
-
-export const PRESENT_DRAW_TABLES: Record<
-  LoveRange,
-  readonly PresentDrawEntry[]
-> = {
-  low: [
-    { cardId: 'PRIZE_SUKIYA', weight: 15 },
-    { cardId: 'PRIZE_ICE_CREAM', weight: 12 },
-    { cardId: 'PRIZE_MCDONALDS', weight: 8 },
-    { cardId: 'PRIZE_RAMEN', weight: 7 },
-    { cardId: 'PRIZE_DIAPER', weight: 8 },
-    { cardId: 'PRIZE_PICTURE_BOOK', weight: 8 },
-    { cardId: 'PRIZE_TOY', weight: 12 },
-    { cardId: 'TROUBLE_PROPERTY_TAX', weight: 6 },
-    { cardId: 'TROUBLE_CAR_LOAN', weight: 5 },
-    { cardId: 'TROUBLE_CAR_REPAIR', weight: 5 },
-    { cardId: 'TROUBLE_HOME_REPAIR', weight: 5 },
-    { cardId: 'TROUBLE_CREDIT_CARD_BILL', weight: 6 },
-    { cardId: 'SPECIAL_LODGER', weight: 3 },
-  ],
-  middle: [
-    { cardId: 'PRIZE_SUKIYA', weight: 6 },
-    { cardId: 'PRIZE_ICE_CREAM', weight: 4 },
-    { cardId: 'PRIZE_MCDONALDS', weight: 7 },
-    { cardId: 'PRIZE_RAMEN', weight: 7 },
-    { cardId: 'PRIZE_DIAPER', weight: 18 },
-    { cardId: 'PRIZE_PICTURE_BOOK', weight: 20 },
-    { cardId: 'PRIZE_TOY', weight: 32 },
-    { cardId: 'TROUBLE_PROPERTY_TAX', weight: 1 },
-    { cardId: 'TROUBLE_CAR_LOAN', weight: 0 },
-    { cardId: 'TROUBLE_CAR_REPAIR', weight: 1 },
-    { cardId: 'TROUBLE_HOME_REPAIR', weight: 1 },
-    { cardId: 'TROUBLE_CREDIT_CARD_BILL', weight: 1 },
-    { cardId: 'SPECIAL_LODGER', weight: 2 },
-  ],
-  high: [
-    { cardId: 'PRIZE_SUKIYA', weight: 1 },
-    { cardId: 'PRIZE_ICE_CREAM', weight: 1 },
-    { cardId: 'PRIZE_MCDONALDS', weight: 2 },
-    { cardId: 'PRIZE_RAMEN', weight: 2 },
-    { cardId: 'PRIZE_DIAPER', weight: 8 },
-    { cardId: 'PRIZE_PICTURE_BOOK', weight: 20 },
-    { cardId: 'PRIZE_TOY', weight: 62 },
-    { cardId: 'TROUBLE_PROPERTY_TAX', weight: 1 },
-    { cardId: 'TROUBLE_CAR_LOAN', weight: 0 },
-    { cardId: 'TROUBLE_CAR_REPAIR', weight: 0 },
-    { cardId: 'TROUBLE_HOME_REPAIR', weight: 1 },
-    { cardId: 'TROUBLE_CREDIT_CARD_BILL', weight: 1 },
-    { cardId: 'SPECIAL_LODGER', weight: 1 },
-  ],
+type LoveRateAnchor = {
+  cardId: LifeCardId
+  at0: number
+  at50: number
+  at100: number
 }
 
-export const getLoveRange = (love: number): LoveRange => {
-  if (love <= 29) return 'low'
-  if (love <= 69) return 'middle'
-  return 'high'
+export const LOVE_RATE_ANCHORS: readonly LoveRateAnchor[] = [
+  { cardId: 'PRIZE_SUKIYA', at0: 2, at50: 8, at100: 5 },
+  { cardId: 'PRIZE_MCDONALDS', at0: 1, at50: 8, at100: 8 },
+  { cardId: 'PRIZE_RAMEN', at0: 1, at50: 8, at100: 7 },
+  { cardId: 'PRIZE_ICE_CREAM', at0: 2, at50: 8, at100: 5 },
+  { cardId: 'PRIZE_DIAPER', at0: 0.5, at50: 8, at100: 18 },
+  { cardId: 'PRIZE_PICTURE_BOOK', at0: 0.5, at50: 8, at100: 20 },
+  { cardId: 'PRIZE_TOY', at0: 0.5, at50: 8, at100: 25 },
+  { cardId: 'TROUBLE_PROPERTY_TAX', at0: 18, at50: 8, at100: 2 },
+  { cardId: 'TROUBLE_CAR_LOAN', at0: 14, at50: 7, at100: 1 },
+  { cardId: 'TROUBLE_CAR_REPAIR', at0: 16, at50: 7, at100: 2 },
+  { cardId: 'TROUBLE_HOME_REPAIR', at0: 16, at50: 7, at100: 2 },
+  { cardId: 'TROUBLE_CREDIT_CARD_BILL', at0: 20, at50: 7, at100: 2 },
+  { cardId: 'SPECIAL_LODGER', at0: 8.5, at50: 8, at100: 3 },
+] as const
+
+const clampLove = (love: number) => Math.min(100, Math.max(0, love))
+
+export const calculateLoveDrawRates = (
+  love: number,
+): readonly PresentDrawEntry[] => {
+  const clampedLove = clampLove(love)
+  return LOVE_RATE_ANCHORS.map(({ cardId, at0, at50, at100 }) => ({
+    cardId,
+    weight:
+      clampedLove <= 50
+        ? at0 + ((at50 - at0) * clampedLove) / 50
+        : at50 + ((at100 - at50) * (clampedLove - 50)) / 50,
+  }))
+}
+
+export const verifyContinuousLoveDrawRates = () => {
+  Array.from({ length: 101 }, (_, love) => love).forEach((love) => {
+    const rates = calculateLoveDrawRates(love)
+    const total = rates.reduce((sum, { weight }) => sum + weight, 0)
+    if (
+      Math.abs(total - 100) > 1e-9 ||
+      rates.some(({ weight }) => weight < 0) ||
+      new Set(rates.map(({ cardId }) => cardId)).size !== 13
+    ) {
+      throw new Error(`愛情${love}の連続抽選率が正しくありません。`)
+    }
+  })
 }

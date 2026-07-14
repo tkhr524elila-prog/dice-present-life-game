@@ -9,6 +9,7 @@ export type LifeChoiceSelection =
   | { kind: 'medical-insurance'; value: boolean }
   | { kind: 'romance'; value: RomanceType }
   | { kind: 'car-insurance'; value: boolean }
+  | { kind: 'nisa-2'; value: boolean }
 
 export type ContractData = {
   title: string
@@ -29,10 +30,11 @@ export type LifeChoiceOption = {
   historyTitle: string
   historyDescription: string
   contract?: ContractData
+  disabledReason?: string
 }
 
 export type LifeChoiceData = {
-  squareId: 13 | 20 | 25 | 27 | 32
+  squareId: number
   title: string
   description: string
   options: readonly [LifeChoiceOption, LifeChoiceOption]

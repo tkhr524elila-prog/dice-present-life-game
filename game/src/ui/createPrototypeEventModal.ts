@@ -1,6 +1,7 @@
 import type { NormalEventData } from '../data/normalEventData'
 
 export type DisplayEventData = NormalEventData & {
+  displayId?: string
   jobModifierApplied?: boolean
   outcomeLabel?: string
   acquiredCardName?: string
@@ -96,7 +97,7 @@ export const createPrototypeEventModal = (): PrototypeEventModal => {
   const show = (event: DisplayEventData) => {
     if (pendingPromise) return pendingPromise
 
-    label.textContent = `第${event.chapter}章・マス${event.squareId}・${event.category}`
+    label.textContent = `第${event.chapter}章・マス${event.displayId ?? event.squareId}・${event.category}`
     title.textContent = event.title
     description.textContent = event.description
     outcome.textContent = event.outcomeLabel ?? ''

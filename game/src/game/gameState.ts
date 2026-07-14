@@ -21,15 +21,20 @@ import type { SettledCardSummary } from './settleLifeCards'
 export type OwnedLifeCard = {
   cardId: LifeCardId
   acquiredAtSquare: number
+  acquiredAtDisplayId?: string
   acquiredOrder: number
   loveAtAcquisition: number
 }
 
 export type GameState = StatusValues & {
   currentSquare: number
+  currentPhysicalId: string
+  currentProgress: number
+  selectedRoute: 'playboy' | 'pure-love' | null
   jobType: JobType | null
   romanceType: RomanceType | null
   hasNisa: boolean
+  hasNisaSecondSlot: boolean
   hasMedicalInsurance: boolean
   isCarInsuranceActive: boolean
   nisaEnrollmentSquare: number | null
@@ -43,6 +48,7 @@ export type GameState = StatusValues & {
   hasFinishedSettlement: boolean
   finalHealth: number | null
   nisaResult: number | null
+  nisaResults: readonly number[]
   medicalInsuranceBenefit: number
   healthMultiplier: number | null
   pointsBeforeHealthMultiplier: number | null
@@ -60,6 +66,11 @@ export type GameStateStore = {
   getState: () => Readonly<GameState>
   subscribe: (listener: (change: GameStateChange) => void) => () => void
   setCurrentSquare: (squareNumber: number) => void
+  setCurrentPosition: (
+    physicalId: string,
+    progress: number,
+    selectedRoute?: 'playboy' | 'pure-love' | null,
+  ) => void
   markForcedStopProcessed: (squareNumber: number) => void
   completeLifeChoice: (
     squareNumber: number,
@@ -83,9 +94,13 @@ export type GameStateStore = {
 
 const createInitialState = (): GameState => ({
   currentSquare: 1,
+  currentPhysicalId: '001',
+  currentProgress: 1,
+  selectedRoute: null,
   jobType: null,
   romanceType: null,
   hasNisa: false,
+  hasNisaSecondSlot: false,
   hasMedicalInsurance: false,
   isCarInsuranceActive: false,
   nisaEnrollmentSquare: null,
@@ -102,6 +117,7 @@ const createInitialState = (): GameState => ({
   hasFinishedSettlement: false,
   finalHealth: null,
   nisaResult: null,
+  nisaResults: [],
   medicalInsuranceBenefit: 0,
   healthMultiplier: null,
   pointsBeforeHealthMultiplier: null,
@@ -127,7 +143,24 @@ export const createGameStateStore = (): GameStateStore => {
       return () => listeners.delete(listener)
     },
     setCurrentSquare: (squareNumber) => {
-      state = { ...state, currentSquare: squareNumber }
+      state = {
+        ...state,
+        currentSquare: squareNumber,
+        currentProgress: squareNumber,
+        currentPhysicalId: String(squareNumber).padStart(3, '0'),
+      }
+      notify()
+    },
+    setCurrentPosition: (physicalId, progress, selectedRoute) => {
+      state = {
+        ...state,
+        currentSquare: progress,
+        currentProgress: progress,
+        currentPhysicalId: physicalId,
+        selectedRoute: selectedRoute === undefined
+          ? state.selectedRoute
+          : selectedRoute,
+      }
       notify()
     },
     markForcedStopProcessed: (squareNumber) => {
@@ -153,27 +186,37 @@ export const createGameStateStore = (): GameStateStore => {
 
       switch (option.selection.kind) {
         case 'job':
-          if (squareNumber !== 13) throw new Error('職業選択のマスが不正です。')
+          if (squareNumber !== 13 && squareNumber !== 21) throw new Error('職業選択のマスが不正です。')
           decisionPatch.jobType = option.selection.value
           break
         case 'nisa':
-          if (squareNumber !== 20) throw new Error('NISA選択のマスが不正です。')
+          if (squareNumber !== 20 && squareNumber !== 30) throw new Error('NISA選択のマスが不正です。')
           decisionPatch.hasNisa = option.selection.value
           decisionPatch.nisaEnrollmentSquare = squareNumber
           break
         case 'medical-insurance':
-          if (squareNumber !== 25) throw new Error('医療保険選択のマスが不正です。')
+          if (squareNumber !== 25 && squareNumber !== 36) throw new Error('医療保険選択のマスが不正です。')
           decisionPatch.hasMedicalInsurance = option.selection.value
           decisionPatch.medicalInsuranceEnrollmentSquare = squareNumber
           break
         case 'romance':
-          if (squareNumber !== 27) throw new Error('恋愛選択のマスが不正です。')
+          if (squareNumber !== 27 && squareNumber !== 40) throw new Error('恋愛選択のマスが不正です。')
           decisionPatch.romanceType = option.selection.value
+          decisionPatch.selectedRoute = option.selection.value === 'playboy'
+            ? 'playboy'
+            : 'pure-love'
           break
         case 'car-insurance':
-          if (squareNumber !== 32) throw new Error('自動車保険選択のマスが不正です。')
+          if (squareNumber !== 32 && squareNumber !== 63) throw new Error('自動車保険選択のマスが不正です。')
           decisionPatch.isCarInsuranceActive = option.selection.value
           decisionPatch.carInsuranceDecisionSquare = squareNumber
+          break
+        case 'nisa-2':
+          if (squareNumber !== 83) throw new Error('NISA2枠目のマスが不正です。')
+          if (option.selection.value && !state.hasNisa) {
+            throw new Error('NISA1枠目未加入ではNISA2枠目を契約できません。')
+          }
+          decisionPatch.hasNisaSecondSlot = option.selection.value
           break
       }
 
@@ -209,6 +252,7 @@ export const createGameStateStore = (): GameStateStore => {
         hasFinishedSettlement: true,
         finalHealth: result.finalHealth,
         nisaResult: result.nisaResult,
+        nisaResults: result.nisaResults,
         medicalInsuranceBenefit: result.medicalInsuranceBenefit,
         healthMultiplier: result.healthMultiplier,
         pointsBeforeHealthMultiplier: result.pointsBeforeHealthMultiplier,
@@ -374,6 +418,7 @@ export const verifySettlementStateRules = () => {
     troubleCards: [],
     troubleTotal: 0,
     nisaResult: null,
+    nisaResults: [],
     finalHealth: 60,
     finalLove: 50,
     medicalInsuranceBenefit: 0,

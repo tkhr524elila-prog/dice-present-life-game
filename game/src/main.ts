@@ -12,9 +12,15 @@ import { verifyLifeCardSettlementRules } from './game/settleLifeCards'
 import { verifySettlementCalculationRules } from './game/calculateSettlement'
 import { verifySettlementHistoryRules } from './game/recordSettlementHistory'
 import {
-  createPrototypeGameFlow,
   type PrototypeGameFlow,
 } from './game/createPrototypeGameFlow'
+import { createGameFlowV2 } from './game/v2/createGameFlowV2'
+import { verifyRouteRulesV2 } from './game/v2/resolveRouteV2'
+import { verifyRouteEventMultiplierV2 } from './game/v2/applyEventV2'
+import { verifyLifeChoiceDataV2 } from './data/v2/lifeChoiceDataV2'
+import { validateBoardDataV2 } from './data/v2/validateBoardDataV2'
+import { verifyContinuousLoveDrawRates } from './data/presentDrawTables'
+import { verifyPhase7Rules } from './game/v2/verifyPhase7Rules'
 import { verifyStatusBoundaryRules } from './game/applyStatusChanges'
 import {
   createGameStateStore,
@@ -34,6 +40,7 @@ import { createPrototypeEventModal } from './ui/createPrototypeEventModal'
 import { createStatusPanel } from './ui/createStatusPanel'
 import { createSettlementModal } from './ui/createSettlementModal'
 import { createTitleScreen } from './ui/createTitleScreen'
+import { createTutorialModal } from './ui/createTutorialModal'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 let disposeScene: (() => void) | undefined
@@ -55,13 +62,19 @@ if (import.meta.env.DEV) {
   verifySettlementCalculationRules()
   verifySettlementStateRules()
   verifySettlementHistoryRules()
+  validateBoardDataV2()
+  verifyLifeChoiceDataV2()
+  verifyRouteRulesV2()
+  verifyRouteEventMultiplierV2()
+  verifyContinuousLoveDrawRates()
+  verifyPhase7Rules()
 }
 
 const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">Phase 6：テスト・公開準備確認</p>
+    <p class="development-label">Phase 7：100マス・恋愛分岐版</p>
   `
 
   app.appendChild(sceneContainer)
@@ -129,10 +142,11 @@ const showThreeScene = () => {
   sceneContainer.appendChild(lifeHistoryModal.element)
   sceneContainer.appendChild(settlementModal.element)
 
-  gameFlow = createPrototypeGameFlow({
+  gameFlow = createGameFlowV2({
     gameState,
     rollDice: sceneController.rollDice,
     movePlayerTo: sceneController.movePlayerTo,
+    setSelectedRoute: sceneController.setSelectedRoute,
     showChapter: chapterBanner.show,
     showEvent: eventModal.show,
     showLifeChoice: lifeChoiceModal.show,
@@ -166,12 +180,18 @@ const showThreeScene = () => {
   })
 }
 
-const titleScreen = createTitleScreen(showThreeScene)
+const tutorialModal = createTutorialModal()
+app.appendChild(tutorialModal.element)
+const showTutorial = () => {
+  void tutorialModal.show().then(showThreeScene)
+}
+const titleScreen = createTitleScreen(showTutorial)
 app.appendChild(titleScreen.element)
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     titleScreen.dispose()
+    tutorialModal.dispose()
     disposeScene?.()
     app.replaceChildren()
   })

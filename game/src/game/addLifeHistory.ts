@@ -15,6 +15,7 @@ export type LifeHistoryEntry = {
   id: number
   type: LifeHistoryType
   squareId: number
+  displayId?: string
   chapter: number
   title: string
   description: string
