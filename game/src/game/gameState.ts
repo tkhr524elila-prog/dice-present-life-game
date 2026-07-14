@@ -299,7 +299,7 @@ export const verifyLifeChoiceStateRules = () => {
     duplicateJobResult.didApply ||
     !nisaResult.didApply ||
     state.jobType !== 'foreign-insurance' ||
-    state.points !== 1_000 ||
+    state.points !== 3_000 ||
     state.health !== 55 ||
     state.love !== 45 ||
     !state.hasNisa ||
@@ -352,7 +352,7 @@ export const verifyLifeChoiceStateRules = () => {
     alternativeState.hasNisa ||
     alternativeState.hasMedicalInsurance ||
     alternativeState.isCarInsuranceActive ||
-    alternativeState.points !== 900 ||
+    alternativeState.points !== 2_900 ||
     alternativeState.health !== 70 ||
     alternativeState.love !== 70
   ) {

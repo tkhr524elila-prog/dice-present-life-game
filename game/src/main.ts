@@ -2,6 +2,7 @@ import './style.css'
 import { verifyNormalEventData } from './data/normalEventData'
 import { verifyLifeChoiceData } from './data/lifeChoiceData'
 import { verifySettlementData } from './data/settlementData'
+import { verifyEventLifeCardRules } from './data/eventLifeCardRules'
 import { verifyPresentDrawRules } from './game/drawLifeCard'
 import { verifyLifeHistoryRules } from './game/addLifeHistory'
 import { verifyJobModifierRules } from './game/applyJobModifiers'
@@ -48,6 +49,7 @@ if (import.meta.env.DEV) {
   verifyJobModifierRules()
   verifyTrafficAccidentRules()
   verifySettlementData()
+  verifyEventLifeCardRules()
   verifyNisaResultRules()
   verifyLifeCardSettlementRules()
   verifySettlementCalculationRules()
@@ -59,7 +61,7 @@ const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">Phase 5：演出・UI品質確認</p>
+    <p class="development-label">Phase 6：テスト・公開準備確認</p>
   `
 
   app.appendChild(sceneContainer)

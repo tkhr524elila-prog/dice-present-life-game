@@ -13,7 +13,8 @@ import {
   type LifeChoiceOption,
 } from '../data/lifeChoiceData'
 import type { DiceValue } from '../three/createPrototypeDice'
-import type { LifeCardData } from '../data/lifeCardData'
+import { getLifeCardById, type LifeCardData } from '../data/lifeCardData'
+import { drawEventLifeCard } from '../data/eventLifeCardRules'
 import type { DisplayEventData } from '../ui/createPrototypeEventModal'
 import { drawLifeCard } from './drawLifeCard'
 import { applyJobModifiers } from './applyJobModifiers'
@@ -334,9 +335,15 @@ export const createPrototypeGameFlow = (
       )
       if (!baseEvent) return
       const event = applyJobModifiers(baseEvent, stateBeforeEvent.jobType)
+      const eventCardId = drawEventLifeCard(event.eventId)
 
       options.setPhase('event')
-      await options.showEvent(event)
+      await options.showEvent({
+        ...event,
+        acquiredCardName: eventCardId
+          ? getLifeCardById(eventCardId).name
+          : undefined,
+      })
       if (disposed) return
 
       const appliedChanges = options.gameState.applyStatusChanges({
@@ -344,6 +351,9 @@ export const createPrototypeGameFlow = (
         health: event.health,
         love: event.love,
       })
+      if (eventCardId) {
+        options.gameState.acquireLifeCard(eventCardId, stoppedSquare.id, false)
+      }
       options.gameState.addLifeHistory({
         type: 'normal-event',
         squareId: stoppedSquare.id,
@@ -353,8 +363,8 @@ export const createPrototypeGameFlow = (
         pointsChange: appliedChanges.points,
         healthChange: appliedChanges.health,
         loveChange: appliedChanges.love,
-        cardId: null,
-        loveAtOccurrence: null,
+        cardId: eventCardId,
+        loveAtOccurrence: eventCardId ? stateBeforeEvent.love : null,
         deduplicationKey: `normal-event:${event.eventId}:${stoppedSquare.id}`,
       })
     } finally {

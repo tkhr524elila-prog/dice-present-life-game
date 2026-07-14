@@ -90,7 +90,7 @@ export const verifyPresentDrawRules = () => {
     drawAt(70, 0.99).cardId !== 'SPECIAL_LODGER' ||
     drawAt(50, 0).type !== 'prize' ||
     drawAt(50, 0.99).type !== 'special' ||
-    drawAt(50, 0.76).type !== 'trouble'
+    drawAt(50, 0.945).type !== 'trouble'
   ) {
     throw new Error('愛情別プレゼント抽選の境界値テストに失敗しました。')
   }

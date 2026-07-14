@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "simulate": "node --import tsx src/simulation/runSimulation.ts"
   },
   "devDependencies": {
     "@types/three": "^0.185.1",
+    "tsx": "^4.23.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   },
