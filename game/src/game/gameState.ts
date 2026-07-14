@@ -15,6 +15,8 @@ import {
   type LifeHistoryEntry,
   type LifeHistoryInput,
 } from './addLifeHistory'
+import type { SettlementResult } from './calculateSettlement'
+import type { SettledCardSummary } from './settleLifeCards'
 
 export type OwnedLifeCard = {
   cardId: LifeCardId
@@ -38,6 +40,15 @@ export type GameState = StatusValues & {
   ownedLifeCards: readonly OwnedLifeCard[]
   lifeHistory: readonly LifeHistoryEntry[]
   isAtGoal: boolean
+  hasFinishedSettlement: boolean
+  finalHealth: number | null
+  nisaResult: number | null
+  medicalInsuranceBenefit: number
+  healthMultiplier: number | null
+  pointsBeforeHealthMultiplier: number | null
+  finalCash: number | null
+  settledTroubleCards: readonly SettledCardSummary[]
+  settlementResult: Readonly<SettlementResult> | null
 }
 
 export type GameStateChange = {
@@ -58,6 +69,7 @@ export type GameStateStore = {
     applied: Readonly<StatusValues>
   }
   setAtGoal: () => void
+  completeSettlement: (result: SettlementResult) => boolean
   acquireLifeCard: (
     cardId: LifeCardId,
     acquiredAtSquare: number,
@@ -87,6 +99,15 @@ const createInitialState = (): GameState => ({
   ownedLifeCards: [],
   lifeHistory: [],
   isAtGoal: false,
+  hasFinishedSettlement: false,
+  finalHealth: null,
+  nisaResult: null,
+  medicalInsuranceBenefit: 0,
+  healthMultiplier: null,
+  pointsBeforeHealthMultiplier: null,
+  finalCash: null,
+  settledTroubleCards: [],
+  settlementResult: null,
 })
 
 export const createGameStateStore = (): GameStateStore => {
@@ -171,6 +192,32 @@ export const createGameStateStore = (): GameStateStore => {
     setAtGoal: () => {
       state = { ...state, isAtGoal: true }
       notify()
+    },
+    completeSettlement: (result) => {
+      if (state.hasFinishedSettlement) return false
+
+      const statusChanges = {
+        points: result.finalCash - state.points,
+        health: result.finalHealth - state.health,
+        love: result.finalLove - state.love,
+      }
+      state = {
+        ...state,
+        points: result.finalCash,
+        health: result.finalHealth,
+        love: result.finalLove,
+        hasFinishedSettlement: true,
+        finalHealth: result.finalHealth,
+        nisaResult: result.nisaResult,
+        medicalInsuranceBenefit: result.medicalInsuranceBenefit,
+        healthMultiplier: result.healthMultiplier,
+        pointsBeforeHealthMultiplier: result.pointsBeforeHealthMultiplier,
+        finalCash: result.finalCash,
+        settledTroubleCards: result.troubleCards,
+        settlementResult: result,
+      }
+      notify(statusChanges)
+      return true
     },
     acquireLifeCard: (
       cardId,
@@ -310,5 +357,43 @@ export const verifyLifeChoiceStateRules = () => {
     alternativeState.love !== 70
   ) {
     throw new Error('未加入・別ルートの状態保存テストに失敗しました。')
+  }
+}
+
+export const verifySettlementStateRules = () => {
+  const store = createGameStateStore()
+  store.setAtGoal()
+  const result: SettlementResult = {
+    startingPoints: 1_000,
+    startingHealth: 60,
+    startingLove: 50,
+    lodgerCount: 0,
+    lodgerPointsChange: 0,
+    lodgerHealthChange: 0,
+    lodgerLoveChange: 0,
+    troubleCards: [],
+    troubleTotal: 0,
+    nisaResult: null,
+    finalHealth: 60,
+    finalLove: 50,
+    medicalInsuranceBenefit: 0,
+    pointsBeforeHealthMultiplier: 1_000,
+    healthMultiplier: 1.1,
+    pointsAfterHealthMultiplier: 1_100,
+    finalCash: 1_100,
+    prizeCards: [],
+  }
+
+  const first = store.completeSettlement(result)
+  const second = store.completeSettlement({ ...result, finalCash: 9_999 })
+  const state = store.getState()
+  if (
+    !first ||
+    second ||
+    !state.hasFinishedSettlement ||
+    state.finalCash !== 1_100 ||
+    state.points !== 1_100
+  ) {
+    throw new Error('ゴール精算の二重反映防止テストに失敗しました。')
   }
 }

@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<LifeHistoryType, string> = {
   'chapter-start': '章の始まり',
   'life-choice': '人生の選択',
   'traffic-accident': '交通事故',
+  settlement: '人生の精算',
   goal: 'ゴール',
 }
 
@@ -159,7 +160,7 @@ export const createLifeHistoryModal = (
   }
 
   const open = () => {
-    if ((currentPhase !== 'ready' && currentPhase !== 'finished') || isOpen) {
+    if (currentPhase !== 'ready' || isOpen) {
       return
     }
     isOpen = true
@@ -185,7 +186,7 @@ export const createLifeHistoryModal = (
     element,
     setPhase: (phase) => {
       currentPhase = phase
-      openButton.disabled = phase !== 'ready' && phase !== 'finished'
+      openButton.disabled = phase !== 'ready'
     },
     dispose: () => {
       openButton.removeEventListener('click', open)

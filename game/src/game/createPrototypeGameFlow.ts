@@ -18,7 +18,10 @@ import type { DisplayEventData } from '../ui/createPrototypeEventModal'
 import { drawLifeCard } from './drawLifeCard'
 import { applyJobModifiers } from './applyJobModifiers'
 import { resolveTrafficAccident } from './resolveTrafficAccident'
+import { calculateSettlement, type SettlementResult } from './calculateSettlement'
+import { recordSettlementHistory } from './recordSettlementHistory'
 import type { GameStateStore } from './gameState'
+import type { SettlementOverview } from '../ui/createSettlementModal'
 
 export type PrototypeTurnPhase =
   | 'ready'
@@ -32,6 +35,7 @@ export type PrototypeTurnPhase =
   | 'choice'
   | 'contract'
   | 'accident'
+  | 'settlement'
   | 'finished'
 
 type PrototypeGameFlowOptions = {
@@ -46,6 +50,11 @@ type PrototypeGameFlowOptions = {
     card: LifeCardData,
     isGuaranteed: boolean,
     onReveal: () => void,
+  ) => Promise<void>
+  showSettlement: (
+    result: Readonly<SettlementResult>,
+    overview: Readonly<SettlementOverview>,
+    onComplete: () => void,
   ) => Promise<void>
   setPhase: (phase: PrototypeTurnPhase) => void
   setResult: (value: DiceValue) => void
@@ -173,6 +182,33 @@ export const createPrototypeGameFlow = (
           cardId: null,
           loveAtOccurrence: null,
           deduplicationKey: `goal:${stoppedSquare.id}`,
+        })
+        const stateAtGoal = options.gameState.getState()
+        const settlement = calculateSettlement(stateAtGoal)
+        const overview: SettlementOverview = {
+          job: stateAtGoal.jobType === 'foreign-insurance'
+            ? '外資系保険会社'
+            : stateAtGoal.jobType === 'local-agency'
+              ? '地元の保険代理店'
+              : '未選択',
+          romance: stateAtGoal.romanceType === 'playboy'
+            ? '遊び人ルート'
+            : stateAtGoal.romanceType === 'serious'
+              ? '真面目な恋愛ルート'
+              : '未選択',
+          hasNisa: stateAtGoal.hasNisa,
+          hasMedicalInsurance: stateAtGoal.hasMedicalInsurance,
+          isCarInsuranceActive: stateAtGoal.isCarInsuranceActive,
+          lifeCardCount: stateAtGoal.ownedLifeCards.length,
+        }
+        options.setPhase('settlement')
+        await options.showSettlement(settlement, overview, () => {
+          if (!options.gameState.completeSettlement(settlement)) return
+          recordSettlementHistory(
+            options.gameState,
+            settlement,
+            stateAtGoal.hasMedicalInsurance,
+          )
         })
         return
       }

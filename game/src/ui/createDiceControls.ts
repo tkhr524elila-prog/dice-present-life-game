@@ -53,6 +53,7 @@ export const createDiceControls = (
     choice: '人生の選択中…',
     contract: '契約手続き中…',
     accident: '事故確認中…',
+    settlement: '人生を精算中…',
     finished: 'ゴール到着',
   }
 

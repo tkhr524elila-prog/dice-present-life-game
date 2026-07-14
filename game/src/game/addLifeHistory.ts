@@ -8,6 +8,7 @@ export type LifeHistoryType =
   | 'chapter-start'
   | 'life-choice'
   | 'traffic-accident'
+  | 'settlement'
   | 'goal'
 
 export type LifeHistoryEntry = {

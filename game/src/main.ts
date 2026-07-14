@@ -1,10 +1,15 @@
 import './style.css'
 import { verifyNormalEventData } from './data/normalEventData'
 import { verifyLifeChoiceData } from './data/lifeChoiceData'
+import { verifySettlementData } from './data/settlementData'
 import { verifyPresentDrawRules } from './game/drawLifeCard'
 import { verifyLifeHistoryRules } from './game/addLifeHistory'
 import { verifyJobModifierRules } from './game/applyJobModifiers'
 import { verifyTrafficAccidentRules } from './game/resolveTrafficAccident'
+import { verifyNisaResultRules } from './game/resolveNisaResult'
+import { verifyLifeCardSettlementRules } from './game/settleLifeCards'
+import { verifySettlementCalculationRules } from './game/calculateSettlement'
+import { verifySettlementHistoryRules } from './game/recordSettlementHistory'
 import {
   createPrototypeGameFlow,
   type PrototypeGameFlow,
@@ -14,6 +19,7 @@ import {
   createGameStateStore,
   verifyLifeChoiceStateRules,
   verifyLifeCardOwnershipRules,
+  verifySettlementStateRules,
 } from './game/gameState'
 import { createScene } from './three/createScene'
 import { createChapterBanner } from './ui/createChapterBanner'
@@ -25,6 +31,7 @@ import { createLifeHistoryModal } from './ui/createLifeHistoryModal'
 import { createPresentDrawModal } from './ui/createPresentDrawModal'
 import { createPrototypeEventModal } from './ui/createPrototypeEventModal'
 import { createStatusPanel } from './ui/createStatusPanel'
+import { createSettlementModal } from './ui/createSettlementModal'
 import { createTitleScreen } from './ui/createTitleScreen'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -40,13 +47,19 @@ if (import.meta.env.DEV) {
   verifyLifeChoiceStateRules()
   verifyJobModifierRules()
   verifyTrafficAccidentRules()
+  verifySettlementData()
+  verifyNisaResultRules()
+  verifyLifeCardSettlementRules()
+  verifySettlementCalculationRules()
+  verifySettlementStateRules()
+  verifySettlementHistoryRules()
 }
 
 const showThreeScene = () => {
   const sceneContainer = document.createElement('main')
   sceneContainer.className = 'scene-container scene-container--appearing'
   sceneContainer.innerHTML = `
-    <p class="development-label">Phase 3：人生の選択・契約確認</p>
+    <p class="development-label">Phase 4：ゴール精算確認</p>
   `
 
   app.appendChild(sceneContainer)
@@ -61,6 +74,7 @@ const showThreeScene = () => {
   const lifeChoiceModal = createLifeChoiceModal()
   const contractModal = createContractModal()
   const presentDrawModal = createPresentDrawModal()
+  const settlementModal = createSettlementModal()
   const statusPanel = createStatusPanel(gameState)
   let updateInventoryPhase:
     | ((phase: Parameters<typeof diceControls.setPhase>[0]) => void)
@@ -108,6 +122,7 @@ const showThreeScene = () => {
   sceneContainer.appendChild(statusPanel.element)
   sceneContainer.appendChild(lifeCardInventory.element)
   sceneContainer.appendChild(lifeHistoryModal.element)
+  sceneContainer.appendChild(settlementModal.element)
 
   gameFlow = createPrototypeGameFlow({
     gameState,
@@ -118,6 +133,7 @@ const showThreeScene = () => {
     showLifeChoice: lifeChoiceModal.show,
     showContract: contractModal.show,
     showPresentDraw: presentDrawModal.show,
+    showSettlement: settlementModal.show,
     setPhase: setGamePhase,
     setResult: diceControls.setResult,
     setCurrentSquare: diceControls.setCurrentSquare,
@@ -135,6 +151,7 @@ const showThreeScene = () => {
     statusPanel.dispose()
     lifeCardInventory.dispose()
     lifeHistoryModal.dispose()
+    settlementModal.dispose()
     diceControls.dispose()
     sceneController.dispose()
   }
