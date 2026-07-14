@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsx src/data/v2/runValidationV2.ts && tsc && vite build",
+    "validate:v2": "tsx src/data/v2/runValidationV2.ts",
     "preview": "vite preview",
     "simulate": "node --import tsx src/simulation/runSimulation.ts"
   },
